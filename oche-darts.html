@@ -138,8 +138,12 @@ button.slot.d{color:var(--red)} button.slot.t{color:var(--green)}
 .camcal .cal-stage{flex:1;min-height:0;padding:0 10px;display:flex}
 .camcal .cam-slot{flex:1}
 .camcal .cam-view{touch-action:none}
-.cal-help{padding:10px 16px 0;color:var(--ink-2);font-size:14px}
-.cal-help p{margin:0 0 6px}
+.cal-tools{padding:8px 14px 0;display:flex;flex-direction:column;gap:6px}
+.zoom-row{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
+.zoom-row input{flex:1;accent-color:var(--green);height:32px}
+.zoom-row b{min-width:86px;text-align:right;font-variant-numeric:tabular-nums;font-size:14px}
+.cal-row{display:flex;align-items:center;gap:4px}
+.cal-info{margin:0;color:var(--ink-2);font-size:14px;min-height:40px}
 .fixpad{background:none;padding:6px 0 0;border-radius:0;flex:none}
 .fixpad .dgrid{height:300px;flex:none}
 #camhold{position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none;overflow:hidden;z-index:-1}
@@ -457,7 +461,7 @@ function startMatch(opts) {
   };
   ui.input = ''; ui.mod = 1; ui.sheet = null; ui.modal = null; ui.screen = 'game';
   cam.staged = []; camResetFrames();
-  if (settings.mode === 'camera' && !cam.cal) { ui.calReturn = 'game'; ui.screen = 'camcal'; cam.edit = null; }
+  if (settings.mode === 'camera' && !cam.cal) { ui.calReturn = 'game'; ui.screen = 'camcal'; cam.edit = null; cam.autoState = null; cam.autoAt = Date.now() + 900; }
   saveMatch(); render(); keepAwake(true);
 }
 
@@ -623,6 +627,8 @@ const I = {
   stats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>',
   more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  rotl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4v5h5"/><path d="M3.5 13a8.5 8.5 0 102.1-7.6L3 9"/></svg>',
+  rotr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4v5h-5"/><path d="M20.5 13a8.5 8.5 0 11-2.1-7.6L21 9"/></svg>',
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>',
   bksp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H9l-6 7 6 7h12z"/><path d="M13 9l5 6M18 9l-5 6"/></svg>',
   board: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="var(--ink)"/><circle cx="24" cy="24" r="19" fill="none" stroke="var(--red)" stroke-width="3" stroke-dasharray="3.73 3.73"/><circle cx="24" cy="24" r="19" fill="none" stroke="var(--green)" stroke-width="3" stroke-dasharray="3.73 3.73" stroke-dashoffset="3.73"/><circle cx="24" cy="24" r="11" fill="none" stroke="var(--red)" stroke-width="2.6" stroke-dasharray="2.16 2.16"/><circle cx="24" cy="24" r="11" fill="none" stroke="var(--green)" stroke-width="2.6" stroke-dasharray="2.16 2.16" stroke-dashoffset="2.16"/><circle cx="24" cy="24" r="3.6" fill="var(--green)"/><circle cx="24" cy="24" r="1.7" fill="var(--red)"/></svg>',
@@ -922,11 +928,17 @@ function renderCamCal() {
       <div class="tb-title"><b>Camera instellen</b></div>
     </header>
     <div class="cal-stage"><div class="cam-slot" id="cam-slot">${msg}</div></div>
-    <div class="cal-help">
-      <p>Zet je telefoon stevig neer, schuin onder of naast het bord, zodat je de pijlen van opzij ziet en het hele bord in beeld is.</p>
-      <p>Sleep elk rood bolletje naar de buitenrand van de dubbelring, midden in het vak met hetzelfde getal. Het raster moet precies over je bord vallen.</p>
+    <div class="cal-tools">
+      ${cam.ready ? `<label class="zoom-row"><span>Zoom</span><input type="range" data-zoom="1" min="${cam.hw ? cam.hw.min : 1}" max="${cam.hw ? cam.hw.max : 4}" step="${cam.hw ? cam.hw.step : 0.1}" value="${cam.hw ? cam.zoom : cam.dz}" aria-label="Zoom"><b id="zoom-val">${zoomLabel()}</b></label>` : ''}
+      <div class="cal-row">
+        <button class="btn small" data-a="cal-auto" ${cam.ready && cam.autoState !== 'busy' ? '' : 'disabled'}>Bord zoeken</button>
+        <span style="flex:1"></span>
+        <button class="icon-btn" data-a="cal-rot" data-v="-1" aria-label="Nummers linksom draaien" ${cam.ready ? '' : 'disabled'}>${I.rotl}</button>
+        <button class="icon-btn" data-a="cal-rot" data-v="1" aria-label="Nummers rechtsom draaien" ${cam.ready ? '' : 'disabled'}>${I.rotr}</button>
+      </div>
+      <p class="cal-info" aria-live="polite">${esc(calInfo())}</p>
     </div>
-    <div class="actions"><button class="btn" data-a="cal-reset" ${cam.ready ? '' : 'disabled'}>Opnieuw plaatsen</button><button class="btn primary" data-a="cal-save" ${cam.ready ? '' : 'disabled'}>Opslaan</button></div>
+    <div class="dock"><button class="btn primary big" data-a="cal-save" ${cam.ready && cam.autoState !== 'busy' ? '' : 'disabled'}>Opslaan</button></div>
   </div>`;
 }
 
@@ -1046,13 +1058,22 @@ const A = {
   'cam-cal'() {
     if (ui.screen !== 'camcal') ui.calReturn = ui.screen;
     ui.sheet = null; ui.screen = 'camcal';
-    cam.edit = cam.cal && !calMismatch() ? cam.cal.pts.map(p => [...p]) : (cam.ready ? defaultCal() : null);
+    const have = cam.cal && !calMismatch();
+    cam.edit = have ? cam.cal.pts.map(p => [...p]) : null;
+    cam.autoState = null; cam.autoAt = have ? 0 : Date.now() + 900;
+    render();
+  },
+  'cal-auto'() { cam.autoAt = 0; camAutoCal(); },
+  'cal-rot'(d) {
+    if (!cam.edit || !convexQuad(cam.edit)) return;
+    const H = solveH(CAL_BOARD, cam.edit), t = +d.v * 18 * Math.PI / 180, c = Math.cos(t), s = Math.sin(t);
+    cam.edit = CAL_BOARD.map(([x, y]) => applyH(H, x * c + y * s, y * c - x * s));
     render();
   },
   'cal-reset'() { cam.edit = defaultCal(); render(); },
   'cal-save'() {
     if (!cam.edit || !convexQuad(cam.edit)) { toast('Zet de vier punten rond het bord'); return; }
-    cam.cal = { pts: cam.edit.map(p => [...p]), aspect: camAspect() || (cam.cal && cam.cal.aspect) || 4 / 3 };
+    cam.cal = { pts: cam.edit.map(p => [...p]), aspect: camAspect() || (cam.cal && cam.cal.aspect) || 4 / 3, zoom: cam.hw ? cam.zoom : 0 };
     store.set('cal', cam.cal); cam.edit = null; cam.prior = null;
     camUpdateH(); camResetFrames();
     ui.screen = ui.calReturn === 'game' && m ? 'game' : 'home';
@@ -1087,10 +1108,12 @@ document.addEventListener('click', e => {
   if (fn) fn(el.dataset, el, e);
 });
 document.addEventListener('input', e => {
+  if (e.target.dataset && e.target.dataset.zoom) { camSetZoom(parseFloat(e.target.value)); return; }
   const i = e.target.dataset && e.target.dataset.nameI;
   if (i != null) { settings.players[+i].name = e.target.value; saveSettings(); }
 });
 document.addEventListener('change', e => {
+  if (e.target.dataset && e.target.dataset.zoom) { if (cam.hw) { cam.autoState = null; cam.autoAt = Date.now() + 900; render(); } return; }
   const i = e.target.dataset && e.target.dataset.levelI;
   if (i != null) { settings.players[+i].bot = e.target.value; saveSettings(); }
 });
@@ -1167,13 +1190,71 @@ function camUpdateH() {
   cam.Hi2b = cam.Hb2i = null; cam.maskIdx = null;
   if (!pts || !convexQuad(pts)) return;
   cam.Hi2b = solveH(pts, CAL_BOARD); cam.Hb2i = solveH(CAL_BOARD, pts);
-  camBuildMask();
+  camSetupProc();
+}
+// Process only the region around the board, at up to 560 px: a digital zoom on the board.
+function camSetupProc() {
+  cam.maskIdx = null; cam.roi = null; cam.pose = null;
+  if (!cam.ready || !cam.Hb2i || !cam.video.videoWidth) return;
+  const vw = cam.video.videoWidth, vh = cam.video.videoHeight;
+  let x0 = 1, x1 = 0, y0 = 1, y1 = 0;
+  for (let k = 0; k < 48; k++) {
+    const a = k / 48 * Math.PI * 2, [u, v] = applyH(cam.Hb2i, 235 * Math.sin(a), 235 * Math.cos(a));
+    x0 = Math.min(x0, u); x1 = Math.max(x1, u); y0 = Math.min(y0, v); y1 = Math.max(y1, v);
+  }
+  const px = (x1 - x0) * 0.04, py = (y1 - y0) * 0.04;
+  x0 = Math.max(0, x0 - px); y0 = Math.max(0, y0 - py); x1 = Math.min(1, x1 + px); y1 = Math.min(1, y1 + py);
+  if (!(x1 - x0 > 0.02 && y1 - y0 > 0.02)) return;
+  cam.roi = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  const pw = cam.roi.w * vw, ph = cam.roi.h * vh, s = Math.min(1, 560 / Math.max(pw, ph));
+  cam.PW = Math.max(40, Math.round(pw * s)); cam.PH = Math.max(40, Math.round(ph * s));
+  cam.proc.width = cam.PW; cam.proc.height = cam.PH;
+  camBuildMask(); camPose(vw, vh); camResetFrames();
+}
+const procToVid = (x, y) => [cam.roi.x + x / cam.PW * cam.roi.w, cam.roi.y + y / cam.PH * cam.roi.h];
+// Estimate the camera pose from the calibration so we know which way a dart sticks out in the image.
+function camPose(vw, vh) { cam.pose = poseFrom(cam.Hb2i, vw, vh); }
+function poseFrom(Hm, vw, vh) {
+  if (!Hm) return null;
+  const cx = vw / 2, cy = vh / 2;
+  // board mm -> centred video pixels
+  const h = [Hm[0] * vw - cx * Hm[6], Hm[1] * vw - cx * Hm[7], Hm[2] * vw - cx * Hm[8],
+             Hm[3] * vh - cy * Hm[6], Hm[4] * vh - cy * Hm[7], Hm[5] * vh - cy * Hm[8], Hm[6], Hm[7], Hm[8]];
+  let f2 = -(h[0] * h[1] + h[3] * h[4]) / (h[6] * h[7]);
+  const L = Math.max(vw, vh);
+  if (!(f2 > 0) || Math.sqrt(f2) < 0.35 * L || Math.sqrt(f2) > 4 * L) {
+    const f2b = (h[1] * h[1] + h[4] * h[4] - h[0] * h[0] - h[3] * h[3]) / (h[6] * h[6] - h[7] * h[7]);
+    f2 = (f2b > 0 && Math.sqrt(f2b) > 0.35 * L && Math.sqrt(f2b) < 4 * L) ? f2b : Math.pow(0.8 * L, 2);
+  }
+  const f = Math.sqrt(f2);
+  const m1 = [h[0] / f, h[3] / f, h[6]], m2 = [h[1] / f, h[4] / f, h[7]], m3 = [h[2] / f, h[5] / f, h[8]];
+  let lam = 2 / (Math.hypot(...m1) + Math.hypot(...m2));
+  if (m3[2] * lam < 0) lam = -lam;
+  const r1 = m1.map(v => v * lam), r2 = m2.map(v => v * lam), t = m3.map(v => v * lam);
+  const r3 = [r1[1] * r2[2] - r1[2] * r2[1], r1[2] * r2[0] - r1[0] * r2[2], r1[0] * r2[1] - r1[1] * r2[0]];
+  const cz = -(r3[0] * t[0] + r3[1] * t[1] + r3[2] * t[2]);
+  const C = [-(r1[0] * t[0] + r1[1] * t[1] + r1[2] * t[2]), -(r2[0] * t[0] + r2[1] * t[1] + r2[2] * t[2]), cz];
+  const dist = Math.hypot(...C), angle = Math.acos(Math.min(1, Math.abs(cz) / dist)) * 180 / Math.PI;
+  return { f, cx, cy, r1, r2, r3, t, zs: cz >= 0 ? 1 : -1, vw, dist, angle };
+}
+// Unit direction (processing px) from a dart's tip towards its flight, at board point (bx, by).
+function camPredDir(bx, by) {
+  const P = cam.pose; if (!P) return null;
+  const pr = (x, y, z) => {
+    const c = [0, 1, 2].map(i => P.r1[i] * x + P.r2[i] * y + P.r3[i] * z + P.t[i]);
+    return c[2] > 1 ? [P.f * c[0] / c[2], P.f * c[1] / c[2]] : null;
+  };
+  const a = pr(bx, by, 0), b = pr(bx, by + 25, P.zs * 100);
+  if (!a || !b) return null;
+  const k = cam.PW / (cam.roi.w * P.vw), dx = (b[0] - a[0]) * k, dy = (b[1] - a[1]) * k, L = Math.hypot(dx, dy);
+  return L > 0.5 ? [dx / L, dy / L, L] : null;
 }
 function camBuildMask() {
-  if (!cam.Hi2b || !cam.PW) return;
+  if (!cam.Hi2b || !cam.PW || !cam.roi) return;
   const { PW, PH } = cam, idx = []; let board = 0;
   for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) {
-    const [bx, by] = applyH(cam.Hi2b, (x + 0.5) / PW, (y + 0.5) / PH);
+    const [u, v] = procToVid(x + 0.5, y + 0.5);
+    const [bx, by] = applyH(cam.Hi2b, u, v);
     const r = Math.hypot(bx, by);
     if (r < 225) { idx.push(y * PW + x); if (r <= 170) board++; }
   }
@@ -1187,7 +1268,7 @@ async function camEnsure() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { cam.error = 'unsupported'; render(); return; }
   cam.starting = true; cam.error = null;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
     if (!camShouldRun()) { stream.getTracks().forEach(t => t.stop()); cam.starting = false; return; }
     cam.stream = stream;
     if (!cam.video) {
@@ -1198,9 +1279,8 @@ async function camEnsure() {
     cam.video.srcObject = stream;
     await new Promise(res => { if (cam.video.readyState >= 1) res(); else cam.video.onloadedmetadata = () => res(); });
     try { await cam.video.play(); } catch (e) {}
-    const vw = cam.video.videoWidth, vh = cam.video.videoHeight, s = 480 / Math.max(vw, vh);
-    cam.PW = Math.round(vw * s); cam.PH = Math.round(vh * s);
-    cam.proc = document.createElement('canvas'); cam.proc.width = cam.PW; cam.proc.height = cam.PH;
+    camZoomInit();
+    cam.proc = document.createElement('canvas');
     cam.pctx = cam.proc.getContext('2d', { willReadFrequently: true });
     cam.ready = true; camUpdateH(); camResetFrames();
     camLoop(); camDraw();
@@ -1208,6 +1288,58 @@ async function camEnsure() {
     cam.error = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'denied' : 'failed';
   }
   cam.starting = false; render();
+}
+function camTrack() { return cam.stream && cam.stream.getVideoTracks()[0]; }
+function camZoomInit() {
+  const trk = camTrack(); let caps = {};
+  try { caps = trk && trk.getCapabilities ? trk.getCapabilities() : {}; } catch (e) {}
+  cam.hw = caps.zoom && caps.zoom.max > caps.zoom.min ? { min: caps.zoom.min, max: Math.min(caps.zoom.max, 10), step: caps.zoom.step || 0.1 } : null;
+  if (cam.hw) {
+    const want = cam.cal && cam.cal.zoom ? cam.cal.zoom : store.get('zoom', cam.hw.min);
+    cam.zoom = Math.min(cam.hw.max, Math.max(cam.hw.min, want)); camApplyZoom();
+  } else { cam.zoom = 1; }
+  cam.dz = 1;
+}
+function camApplyZoom() {
+  const trk = camTrack();
+  if (cam.hw && trk) try { trk.applyConstraints({ advanced: [{ zoom: cam.zoom }] }).catch(() => {}); } catch (e) {}
+}
+function camSetZoom(v) {
+  if (cam.hw) { cam.zoom = v; store.set('zoom', v); camApplyZoom(); } else cam.dz = v;
+  const el = document.getElementById('zoom-val'); if (el) el.textContent = zoomLabel();
+}
+function zoomLabel() { const v = cam.hw ? cam.zoom : cam.dz; return nf1.format(v) + '×' + (cam.hw ? '' : ' (digitaal)'); }
+function camAutoCal(silent) {
+  if (!cam.ready || cam.video.readyState < 2) { cam.autoAt = Date.now() + 500; return; }
+  cam.autoState = 'busy'; render();
+  setTimeout(() => {
+    const vw = cam.video.videoWidth, vh = cam.video.videoHeight, s = Math.min(1, 720 / Math.max(vw, vh));
+    const W = Math.round(vw * s), H = Math.round(vh * s);
+    if (!cam.acv) { cam.acv = document.createElement('canvas'); cam.actx = cam.acv.getContext('2d', { willReadFrequently: true }); }
+    cam.acv.width = W; cam.acv.height = H; cam.actx.drawImage(cam.video, 0, 0, W, H);
+    let r = null;
+    try { r = autoCalibrate(cam.actx.getImageData(0, 0, W, H).data, W, H); } catch (e) { r = null; }
+    if (r) { cam.edit = CAL_BOARD.map(([x, y]) => { const [u, v] = applyH(r.H, x, y); return [u / W, v / H]; }); cam.autoState = 'found'; }
+    else cam.autoState = 'notfound';
+    render();
+  }, 40);
+}
+function calInfo() {
+  if (cam.error || !cam.ready) return '';
+  if (cam.autoState === 'busy' || cam.autoAt) return 'Bord zoeken…';
+  if (cam.autoState === 'notfound') return 'Geen bord gevonden. Zoom in of zet je telefoon dichterbij, zorg voor goed licht, of sleep de rode bolletjes zelf naar de buitenrand van de dubbelring bij 20, 6, 3 en 11.';
+  if (!cam.edit || !convexQuad(cam.edit)) return 'Zet de rode bolletjes rond het bord.';
+  const vw = cam.video.videoWidth, vh = cam.video.videoHeight, Hb = solveH(CAL_BOARD, cam.edit), P = poseFrom(Hb, vw, vh);
+  let x0 = 1, x1 = 0, y0 = 1, y1 = 0;
+  for (let k = 0; k < 24; k++) { const a = k / 24 * Math.PI * 2, [u, v] = applyH(Hb, 170 * Math.sin(a), 170 * Math.cos(a)); x0 = Math.min(x0, u); x1 = Math.max(x1, u); y0 = Math.min(y0, v); y1 = Math.max(y1, v); }
+  const frac = Math.max(x1 - x0, y1 - y0);
+  let s = (cam.autoState === 'found' ? 'Bord gevonden. ' : '') + (P ? `Je camera kijkt onder ${Math.round(P.angle)}° schuin naar het bord` + (P.angle >= 20 ? `, van ongeveer ${Math.round(P.dist / 10)} cm afstand.` : '.') : '');
+  if (P && P.angle < 20) s += ' Dat is bijna recht van voren: zet je telefoon schuiner (30 tot 45°), dan ziet hij de punten beter.';
+  else if (P && P.angle > 65) s += ' Dat is heel schuin: draai hem iets meer naar het bord toe.';
+  else if (P) s += ' Goede hoek.';
+  if (frac < 0.5) s += ' Het bord is klein in beeld: zoom in of zet je telefoon dichterbij.';
+  s += ' Staat de 20 niet bovenaan? Draai met de pijltjes of sleep de bolletjes.';
+  return s;
 }
 function camStop() {
   if (cam.stream) cam.stream.getTracks().forEach(t => t.stop());
@@ -1235,7 +1367,8 @@ function humanCamTurn() {
 // ---------- frame processing ----------
 function camGrab() {
   const { PW, PH, pctx } = cam;
-  pctx.drawImage(cam.video, 0, 0, PW, PH);
+  const vw = cam.video.videoWidth, vh = cam.video.videoHeight, r = cam.roi;
+  pctx.drawImage(cam.video, r.x * vw, r.y * vh, r.w * vw, r.h * vh, 0, 0, PW, PH);
   return pctx.getImageData(0, 0, PW, PH).data; // RGBA
 }
 function motionCount(a, b) {
@@ -1286,23 +1419,31 @@ function camAnalyze(S) {
   const clean = cam.boardPx * 0.004;
   if (cam.state === 'wait') {
     const dB = changedArea(S, cam.base);
-    if (dB < clean || (cam.bigMotion && dB < cam.boardPx * 0.15)) { cam.ref = cam.base = S; cam.state = 'throw'; setStatus(camReadyStatus()); }
+    if (changedArea(S, cam.ref) > cam.boardPx * 0.15) { setStatus('Er staat iets voor het bord'); return; }
+    if (dB < clean || cam.bigMotion) { cam.ref = cam.base = S; cam.state = 'throw'; setStatus(camReadyStatus()); }
     cam.bigMotion = false; return;
   }
   const info = stagedInfo();
+  // somebody still standing in front of the board: wait until the view is clear
+  if (changedArea(S, cam.ref) > cam.boardPx * 0.15) { setStatus('Er staat iets voor het bord'); return; }
   if (cam.staged.length) {
-    const dB = changedArea(S, cam.base);
-    if (dB < clean) { cam.bigMotion = false; commitCamTurn(); cam.ref = cam.base = S; cam.state = 'throw'; setStatus(camReadyStatus()); return; }
+    // darts pulled out: the board looks like before the turn, or somebody was at the board
+    if (cam.bigMotion || changedArea(S, cam.base) < clean) { cam.bigMotion = false; commitCamTurn(); cam.ref = cam.base = S; cam.state = 'throw'; setStatus(camReadyStatus()); return; }
+  } else if (cam.bigMotion) {
+    // somebody was at the board without a turn in progress (e.g. pulled out old darts): new starting picture
+    cam.bigMotion = false; cam.ref = cam.base = S; setStatus(camReadyStatus()); return;
   }
   if (info.done) { cam.bigMotion = false; return; }
   const res = findDarts(S, cam.ref, 3 - cam.staged.length);
   cam.bigMotion = false;
   if (res.obstructed) { setStatus('Er staat iets voor het bord'); return; }
   if (res.darts.length) {
+    cam.dbg = { pts: res.blob, t: Date.now() };
     for (const t of res.darts) {
-      const [bx, by] = applyH(cam.Hi2b, t.x / cam.PW, t.y / cam.PH);
+      const [u, v] = procToVid(t.x, t.y);
+      const [bx, by] = applyH(cam.Hi2b, u, v);
       const d = scorePoint(bx, by);
-      cam.staged.push({ label: d.label, v: d.v, m: d.m, px: t.x / cam.PW, py: t.y / cam.PH, bx, by });
+      cam.staged.push({ label: d.label, v: d.v, m: d.m, px: u, py: v, bx, by });
       if (stagedInfo().done) break;
     }
     cam.ref = S; cam.lastSeen = Date.now();
@@ -1371,7 +1512,9 @@ function findDarts(S, R, maxN) {
     }
   }
   const cands = comps.filter(c => c.strong >= minA && c.strong <= maxA).sort((a, b) => b.strong - a.strong).slice(0, maxN);
-  return { darts: cands.map(c => dartTip(c.pix, PW)), noiseOnly: !cands.length && area < minA * 2 };
+  const blob = [];
+  for (const c of cands) { const step = Math.max(1, Math.floor(c.pix.length / 700)); for (let i = 0; i < c.pix.length; i += step) blob.push(procToVid(c.pix[i] % PW + 0.5, ((c.pix[i] / PW) | 0) + 0.5)); }
+  return { darts: cands.map(c => dartTip(c.pix, PW)), blob, noiseOnly: !cands.length && area < minA * 2 };
 }
 
 function dartTip(pix, PW) {
@@ -1380,7 +1523,13 @@ function dartTip(pix, PW) {
   mx /= n; my /= n;
   let cxx = 0, cyy = 0, cxy = 0;
   for (const p of pix) { const dx = p % PW - mx, dy = ((p / PW) | 0) - my; cxx += dx * dx; cyy += dy * dy; cxy += dx * dy; }
-  const th = 0.5 * Math.atan2(2 * cxy, cxx - cyy), ux = Math.cos(th), uy = Math.sin(th);
+  let th = 0.5 * Math.atan2(2 * cxy, cxx - cyy);
+  // expected tip->flight direction from the camera pose
+  const [cu, cv] = procToVid(mx, my), [cbx, cby] = applyH(cam.Hi2b, cu, cv), pred = camPredDir(cbx, cby);
+  const tr = cxx + cyy, det = cxx * cyy - cxy * cxy, disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+  const elong = (tr / 2 + disc) / Math.max(1e-6, tr / 2 - disc);
+  if (pred && (elong < 2.5 || Math.abs(Math.cos(th) * pred[0] + Math.sin(th) * pred[1]) < 0.5)) th = Math.atan2(pred[1], pred[0]);
+  const ux = Math.cos(th), uy = Math.sin(th);
   let tmin = 1e9, tmax = -1e9;
   const T = new Float32Array(n), Sv = new Float32Array(n);
   pix.forEach((p, i) => { const dx = p % PW - mx, dy = ((p / PW) | 0) - my; T[i] = dx * ux + dy * uy; Sv[i] = -dx * uy + dy * ux; if (T[i] < tmin) tmin = T[i]; if (T[i] > tmax) tmax = T[i]; });
@@ -1395,7 +1544,9 @@ function dartTip(pix, PW) {
   const wa = aMax - aMin + 1, wb = bMax - bMin + 1, ratio = wa / wb;
   let tipAtMin;
   const confident = ratio < 0.75 || ratio > 1.33;
-  if (confident) tipAtMin = ratio < 1;
+  const align = pred ? ux * pred[0] + uy * pred[1] : 0;
+  if (pred && Math.abs(align) > 0.35 && pred[2] > 3) tipAtMin = align > 0;
+  else if (confident) tipAtMin = ratio < 1;
   else if (cam.prior) tipAtMin = (ux * cam.prior[0] + uy * cam.prior[1]) > 0;
   else tipAtMin = ratio <= 1;
   const fx = tipAtMin ? ux : -ux, fy = tipAtMin ? uy : -uy; // tip -> flight
@@ -1440,14 +1591,15 @@ function camMakeView() {
   const toVid = e => {
     const r = cam.view.getBoundingClientRect(), f = cam.fit; if (!f) return null;
     const dpr = cam.view.width / r.width;
-    return [((e.clientX - r.left) * dpr - f.ox) / f.w, ((e.clientY - r.top) * dpr - f.oy) / f.h];
+    return [f.src.x + ((e.clientX - r.left) * dpr - f.ox) / f.w * f.src.w, f.src.y + ((e.clientY - r.top) * dpr - f.oy) / f.h * f.src.h];
   };
   cam.view.addEventListener('pointerdown', e => {
     if (ui.screen !== 'camcal' || !cam.edit || !cam.fit) return;
     const p = toVid(e); if (!p) return;
     const r = cam.view.getBoundingClientRect(), dpr = cam.view.width / r.width;
     let best = -1, bd = 1e9;
-    cam.edit.forEach((q, i) => { const d = Math.hypot((q[0] - p[0]) * cam.fit.w, (q[1] - p[1]) * cam.fit.h) / dpr; if (d < bd) { bd = d; best = i; } });
+    const f = cam.fit;
+    cam.edit.forEach((q, i) => { const d = Math.hypot((q[0] - p[0]) / f.src.w * f.w, (q[1] - p[1]) / f.src.h * f.h) / dpr; if (d < bd) { bd = d; best = i; } });
     if (bd > 60) return;
     cam.drag = best; cam.dragOff = [cam.edit[best][0] - p[0], cam.edit[best][1] - p[1]];
     cam.view.setPointerCapture(e.pointerId); e.preventDefault();
@@ -1458,7 +1610,7 @@ function camMakeView() {
     cam.edit[cam.drag] = [Math.min(1, Math.max(0, p[0] + cam.dragOff[0])), Math.min(1, Math.max(0, p[1] + cam.dragOff[1]))];
     camUpdateH();
   });
-  const end = () => { if (cam.drag >= 0) { cam.drag = -1; render(); } };
+  const end = () => { if (cam.drag >= 0) { cam.drag = -1; if (cam.autoState === 'notfound') cam.autoState = null; render(); } };
   cam.view.addEventListener('pointerup', end); cam.view.addEventListener('pointercancel', end);
 }
 function camDraw() {
@@ -1470,12 +1622,21 @@ function camDraw() {
   const W = Math.round(r.width * dpr), H = Math.round(r.height * dpr);
   if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const g = cam.vctx, vw = cam.video.videoWidth, vh = cam.video.videoHeight;
-  const s = Math.min(W / vw, H / vh), w = vw * s, h = vh * s, ox = (W - w) / 2, oy = (H - h) / 2;
-  cam.fit = { ox, oy, w, h };
+  const calib = ui.screen === 'camcal';
+  let src = !calib && cam.roi && !calMismatch() ? cam.roi : { x: 0, y: 0, w: 1, h: 1 };
+  if (calib && !cam.hw && cam.dz > 1) {
+    const w0 = 1 / cam.dz; let ccx = 0.5, ccy = 0.5;
+    if (cam.edit) { ccx = cam.edit.reduce((a, p) => a + p[0], 0) / 4; ccy = cam.edit.reduce((a, p) => a + p[1], 0) / 4; }
+    src = { x: Math.min(1 - w0, Math.max(0, ccx - w0 / 2)), y: Math.min(1 - w0, Math.max(0, ccy - w0 / 2)), w: w0, h: w0 };
+  }
+  const sw = src.w * vw, sh = src.h * vh;
+  const s = Math.min(W / sw, H / sh), w = sw * s, h = sh * s, ox = (W - w) / 2, oy = (H - h) / 2;
+  cam.fit = { ox, oy, w, h, src };
+  if (ui.screen === 'camcal' && cam.autoAt && Date.now() >= cam.autoAt && cam.video.readyState >= 2) { cam.autoAt = 0; camAutoCal(); }
   if (ui.screen === 'camcal' && !cam.edit) cam.edit = cam.cal && !calMismatch() ? cam.cal.pts.map(p => [...p]) : defaultCal();
   g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
-  g.drawImage(cam.video, ox, oy, w, h);
-  const P = (u, v) => [ox + u * w, oy + v * h];
+  g.drawImage(cam.video, src.x * vw, src.y * vh, sw, sh, ox, oy, w, h);
+  const P = (u, v) => [ox + (u - src.x) / src.w * w, oy + (v - src.y) / src.h * h];
   const Hb = ui.screen === 'camcal' ? (cam.edit && convexQuad(cam.edit) ? solveH(CAL_BOARD, cam.edit) : null) : cam.Hb2i;
   if (Hb && !(ui.screen !== 'camcal' && calMismatch())) {
     const B = (x, y) => { const [u, v] = applyH(Hb, x, y); return P(u, v); };
@@ -1484,7 +1645,6 @@ function camDraw() {
       for (let k = 0; k <= 72; k++) { const a = k / 72 * Math.PI * 2, [x, y] = B(rad * Math.sin(a), rad * Math.cos(a)); k ? wire.lineTo(x, y) : wire.moveTo(x, y); }
     }
     for (let k = 0; k < 20; k++) { const a = (k * 18 + 9) * Math.PI / 180, [x0, y0] = B(15.9 * Math.sin(a), 15.9 * Math.cos(a)), [x1, y1] = B(170 * Math.sin(a), 170 * Math.cos(a)); wire.moveTo(x0, y0); wire.lineTo(x1, y1); }
-    const calib = ui.screen === 'camcal';
     g.lineWidth = (calib ? 3 : 2.4) * dpr; g.strokeStyle = 'rgba(0,0,0,.45)'; g.stroke(wire);
     g.lineWidth = (calib ? 1.4 : 1) * dpr; g.strokeStyle = calib ? 'rgba(255,214,90,.95)' : 'rgba(255,214,90,.6)'; g.stroke(wire);
     g.font = `700 ${11 * dpr}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(255,240,200,.9)';
@@ -1508,13 +1668,178 @@ function camDraw() {
       g.beginPath(); g.moveTo(cx - 12 * dpr, cy); g.lineTo(cx + 12 * dpr, cy); g.moveTo(cx, cy - 12 * dpr); g.lineTo(cx, cy + 12 * dpr); g.lineWidth = 2 * dpr; g.strokeStyle = '#e24b40'; g.stroke();
     }
   } else {
+    if (cam.dbg && Date.now() - cam.dbg.t < 3000) {
+      g.fillStyle = 'rgba(64,200,255,.8)';
+      const q = Math.max(2, 2 * dpr);
+      for (const [u, v] of cam.dbg.pts) { const [x, y] = P(u, v); g.fillRect(x - q / 2, y - q / 2, q, q); }
+    }
     cam.staged.forEach((d, i) => {
+      if (d.px == null) return;
       const [x, y] = P(d.px, d.py);
       g.beginPath(); g.arc(x, y, 6 * dpr, 0, Math.PI * 2); g.fillStyle = '#e24b40'; g.fill(); g.lineWidth = 2 * dpr; g.strokeStyle = '#fff'; g.stroke();
       g.font = `800 ${13 * dpr}px system-ui,sans-serif`; g.textAlign = 'left'; g.textBaseline = 'middle';
       g.lineWidth = 3 * dpr; g.strokeStyle = 'rgba(0,0,0,.7)'; g.strokeText(d.label, x + 9 * dpr, y); g.fillStyle = '#fff'; g.fillText(d.label, x + 9 * dpr, y);
     });
   }
+}
+// ================= Automatic board detection =================
+function m3mul(A, B) { const C = new Array(9); for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) C[i * 3 + j] = A[i * 3] * B[j] + A[i * 3 + 1] * B[3 + j] + A[i * 3 + 2] * B[6 + j]; return C; }
+function colClass(r, g, b) {
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  if (mx < 38 || d < 28 || d < 0.3 * mx) return 0;
+  let h;
+  if (mx === r) h = ((g - b) / d) % 6; else if (mx === g) h = (b - r) / d + 2; else h = (r - g) / d + 4;
+  h *= 60; if (h < 0) h += 360;
+  if (h < 22 || h > 332) return 1;      // red
+  if (h > 80 && h < 180) return 2;      // green
+  return 0;
+}
+const segColor = k => ((k % 20) + 20) % 20 % 2 === 0 ? 1 : 2; // 20 (k=0) has a red double/treble
+function fitH(pairs) {
+  const n = pairs.length; let mu = 0, mv = 0;
+  for (const p of pairs) { mu += p[2]; mv += p[3]; } mu /= n; mv /= n;
+  let sd = 0; for (const p of pairs) sd += Math.hypot(p[2] - mu, p[3] - mv); sd = (sd / n) || 1;
+  const A = Array.from({ length: 8 }, () => new Array(8).fill(0)), b = new Array(8).fill(0);
+  const acc = (r, y) => { for (let i = 0; i < 8; i++) { b[i] += r[i] * y; for (let j = 0; j < 8; j++) A[i][j] += r[i] * r[j]; } };
+  for (const p of pairs) {
+    const X = p[0] / 170, Y = p[1] / 170, u = (p[2] - mu) / sd, v = (p[3] - mv) / sd;
+    acc([X, Y, 1, 0, 0, 0, -u * X, -u * Y], u); acc([0, 0, 0, X, Y, 1, -v * X, -v * Y], v);
+  }
+  const h = gaussSolve(A, b); if (!h) return null;
+  return m3mul([sd, 0, mu, 0, sd, mv, 0, 0, 1], m3mul([...h, 1], [1 / 170, 0, 0, 0, 1 / 170, 0, 0, 0, 1]));
+}
+function fitEllipse(pts) {
+  const n = pts.length; if (n < 20) return null;
+  let mx = 0, my = 0; for (const [x, y] of pts) { mx += x; my += y; } mx /= n; my /= n;
+  let s = 0; for (const [x, y] of pts) s += Math.hypot(x - mx, y - my); s = s / n || 1;
+  const A = Array.from({ length: 5 }, () => new Array(5).fill(0)), b = new Array(5).fill(0);
+  for (const [px, py] of pts) {
+    const x = (px - mx) / s, y = (py - my) / s, r = [x * x, x * y, y * y, x, y];
+    for (let i = 0; i < 5; i++) { b[i] += r[i]; for (let j = 0; j < 5; j++) A[i][j] += r[i] * r[j]; }
+  }
+  const q = gaussSolve(A, b); if (!q) return null;
+  const [a, bb, c, d, e] = q, det = 4 * a * c - bb * bb;
+  if (det <= 0) return null;
+  const x0 = (bb * e - 2 * c * d) / det, y0 = (bb * d - 2 * a * e) / det;
+  const F = a * x0 * x0 + bb * x0 * y0 + c * y0 * y0 + d * x0 + e * y0 - 1;
+  const th = 0.5 * Math.atan2(bb, a - c), ct = Math.cos(th), st = Math.sin(th);
+  const l1 = a * ct * ct + bb * ct * st + c * st * st, l2 = a * st * st - bb * ct * st + c * ct * ct;
+  if (!(-F / l1 > 0 && -F / l2 > 0)) return null;
+  return { cx: mx + x0 * s, cy: my + y0 * s, a: Math.sqrt(-F / l1) * s, b: Math.sqrt(-F / l2) * s, th };
+}
+function ellRho(E, x, y) {
+  const dx = x - E.cx, dy = y - E.cy, c = Math.cos(E.th), s = Math.sin(E.th);
+  const u = dx * c + dy * s, v = -dx * s + dy * c; return Math.hypot(u / E.a, v / E.b);
+}
+// Returns { H (board mm -> pixel), score, coverage } or null.
+function autoCalibrate(d, W, Hh) {
+  const N = W * Hh, cls = new Uint8Array(N);
+  for (let i = 0, j = 0; i < N; i++, j += 4) cls[i] = colClass(d[j], d[j + 1], d[j + 2]);
+  // connected components of red/green pixels (5x5 neighbourhood bridges the wires)
+  const lab = new Int32Array(N), stack = new Int32Array(N); let L = 0; const comps = [];
+  for (let s0 = 0; s0 < N; s0++) {
+    if (!cls[s0] || lab[s0]) continue;
+    L++; let sp = 0; stack[sp++] = s0; lab[s0] = L; const pix = []; let red = 0, green = 0;
+    while (sp) {
+      const p = stack[--sp]; pix.push(p); if (cls[p] === 1) red++; else green++;
+      const x = p % W, y = (p / W) | 0;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= Hh) continue;
+        const q = yy * W + xx; if (cls[q] && !lab[q]) { lab[q] = L; stack[sp++] = q; }
+      }
+    }
+    const sc = Math.min(red, green);
+    if (sc >= 25) comps.push({ pix, sc });
+  }
+  comps.sort((a, b) => b.sc - a.sc);
+  let result = null;
+  for (const comp of comps.slice(0, 4)) {
+    const r = calFromComponent(comp, cls, W, Hh);
+    if (r && (!result || r.score * r.coverage > result.score * result.coverage)) result = r;
+    if (result && result.score > 0.95 && result.coverage > 0.8) break;
+  }
+  return result && result.score > 0.8 && result.coverage > 0.35 ? result : null;
+}
+function calFromComponent(best, cls, W, Hh) {
+  const N = W * Hh;
+  let E = fitEllipse(best.pix.map(p => [p % W, (p / W) | 0]));
+  if (!E) return null;
+  for (let it = 0; it < 2; it++) {
+    const pts = [];
+    for (let p = 0; p < N; p++) if (cls[p]) { const x = p % W, y = (p / W) | 0, r = ellRho(E, x, y); if (r > 0.9 && r < 1.1) pts.push([x, y]); }
+    const E2 = fitEllipse(pts); if (!E2) break; E = E2;
+  }
+  const at = (H, x, y) => { const [u, v] = applyH(H, x, y), xi = Math.round(u), yi = Math.round(v); return xi < 0 || yi < 0 || xi >= W || yi >= Hh ? 0 : cls[yi * W + xi]; };
+  const ringScore = H => {
+    let ok = 0, nz = 0, tot = 0;
+    for (const r of [166, 103]) for (let a = 0; a < 360; a += 1) {
+      if (Math.abs(((a % 18) + 18) % 18 - 9) < 1.5) continue;
+      const rad = a * Math.PI / 180, c = at(H, r * Math.sin(rad), r * Math.cos(rad)); tot++;
+      if (c) { nz++; if (c === segColor(Math.floor(((a + 9) % 360) / 18))) ok++; }
+    }
+    return { score: nz ? ok / nz : 0, coverage: nz / tot };
+  };
+  let result = null;
+  for (const R0 of [166, 103]) { // is the fitted ring the double or the treble?
+    const affine = phi => {
+      const ct = Math.cos(E.th), st = Math.sin(E.th), cp = Math.cos(phi), sp = Math.sin(phi), sa = E.a / R0, sb = E.b / R0;
+      const m00 = sa * cp, m01 = sa * sp, m10 = sb * sp, m11 = -sb * cp; // diag(sa,-sb) * rot(phi)
+      return [ct * m00 - st * m10, ct * m01 - st * m11, E.cx, st * m00 + ct * m10, st * m01 + ct * m11, E.cy, 0, 0, 1];
+    };
+    let bestPhi = 0, bestS = -1e9;
+    for (let deg = 0; deg < 36; deg += 0.5) {
+      const H = affine(deg * Math.PI / 180); let s = 0;
+      for (let a = 0; a < 360; a += 2) {
+        const rad = a * Math.PI / 180, c = at(H, R0 * Math.sin(rad), R0 * Math.cos(rad));
+        if (c) s += c === segColor(Math.floor(((a + 9) % 360) / 18)) ? 1 : -1;
+      }
+      if (s > bestS) { bestS = s; bestPhi = deg; }
+    }
+    // among the 10 colour-equivalent rotations, put the 20 at the top of the picture
+    let Hc = null, top = 1e9;
+    for (let j = 0; j < 10; j++) {
+      const H = affine((bestPhi + 36 * j) * Math.PI / 180), [, v] = applyH(H, 0, R0);
+      if (v - E.cy < top) { top = v - E.cy; Hc = H; }
+    }
+    for (let it = 0; it < 5; it++) {
+      const pairs = [];
+      for (const [rin, rout] of [[162, 170], [99, 107]]) {
+        const rm = (rin + rout) / 2;
+        for (let k = 0; k < 20; k++) {   // wire between segment k and k+1
+          const beta = k * 18 + 9, cl = segColor(k), cr = segColor(k + 1), seq = [];
+          for (let a = beta - 14; a <= beta + 14; a += 0.25) { const rad = a * Math.PI / 180; seq.push([a, at(Hc, rm * Math.sin(rad), rm * Math.cos(rad))]); }
+          let bestK = -1, bs = -1e9, nz = 0; for (const s of seq) if (s[1]) nz++;
+          if (nz < 30) continue;
+          const pre = [0]; for (const s of seq) pre.push(pre[pre.length - 1] + (s[1] === cl ? 1 : s[1] === cr ? -1 : 0));
+          for (let i = 4; i < seq.length - 4; i++) { const sc = pre[i] - (pre[seq.length] - pre[i]); if (sc > bs) { bs = sc; bestK = i; } }
+          if (bs < nz * 0.6) continue;
+          const a = (seq[bestK - 1][0] + seq[bestK][0]) / 2, rad = a * Math.PI / 180, br = beta * Math.PI / 180;
+          const [u, v] = applyH(Hc, rm * Math.sin(rad), rm * Math.cos(rad));
+          pairs.push([rm * Math.sin(br), rm * Math.cos(br), u, v]);
+        }
+        for (let k = 0; k < 20; k++) {   // inner and outer edge of the ring in the middle of each segment
+          const al = k * 18 * Math.PI / 180, want = segColor(k), seq = [];
+          for (let r = rin - 12; r <= rout + 12; r += 0.25) seq.push([r, at(Hc, r * Math.sin(al), r * Math.cos(al)) === want ? 1 : 0]);
+          const pre = [0]; for (const s of seq) pre.push(pre[pre.length - 1] + s[1]);
+          const tot = pre[seq.length], n = seq.length; let bi = -1, bj = -1, bs = -1e9;
+          for (let i = 1; i < n; i++) for (let j = i + 12; j < Math.min(n, i + 60); j++) {
+            const inside = pre[j] - pre[i], sc = inside - (j - i - inside) - (tot - inside);
+            if (sc > bs) { bs = sc; bi = i; bj = j; }
+          }
+          if (bi < 0 || pre[bj] - pre[bi] < (bj - bi) * 0.7) continue;
+          const r0 = (seq[bi - 1][0] + seq[bi][0]) / 2, r1 = (seq[bj - 1][0] + seq[bj][0]) / 2;
+          const p0 = applyH(Hc, r0 * Math.sin(al), r0 * Math.cos(al)), p1 = applyH(Hc, r1 * Math.sin(al), r1 * Math.cos(al));
+          pairs.push([rin * Math.sin(al), rin * Math.cos(al), p0[0], p0[1]]);
+          pairs.push([rout * Math.sin(al), rout * Math.cos(al), p1[0], p1[1]]);
+        }
+      }
+      if (pairs.length < 16) break;
+      const Hn = fitH(pairs); if (!Hn) break; Hc = Hn;
+    }
+    const q = ringScore(Hc);
+    if (!result || q.score * q.coverage > result.score * result.coverage) result = { H: Hc, ...q };
+  }
+  return result;
 }
 render(); if (ui.screen === 'game') keepAwake(true);
 </script>

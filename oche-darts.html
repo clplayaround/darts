@@ -1,0 +1,1522 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Oche darts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#e7ebe4; --surface:#f5f7f2; --raised:#ffffff; --line:#cbd3c9;
+  --ink:#16201b; --ink-2:#55625a; --ink-3:#8d978f;
+  --red:#c4342b; --green:#177a4a; --focus:#177a4a;
+  --key:#ffffff; --key-2:#dde3da; --scrim:rgba(12,18,15,.45);
+  --f-num:'Big Shoulders Display','Big Shoulders','Arial Narrow','Roboto Condensed',sans-serif;
+  --f-ui:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#131c18; --surface:#1a2520; --raised:#22302a; --line:#2e3e36;
+    --ink:#efe9da; --ink-2:#a6b0a9; --ink-3:#6c7a72;
+    --red:#e24b40; --green:#2f9e63; --focus:#e9dfc2;
+    --key:#202d27; --key-2:#2a3a33; --scrim:rgba(0,0,0,.55);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#131c18; --surface:#1a2520; --raised:#22302a; --line:#2e3e36;
+  --ink:#efe9da; --ink-2:#a6b0a9; --ink-3:#6c7a72;
+  --red:#e24b40; --green:#2f9e63; --focus:#e9dfc2;
+  --key:#202d27; --key-2:#2a3a33; --scrim:rgba(0,0,0,.55);
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:16px;line-height:1.4;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer;touch-action:manipulation}
+button:disabled{opacity:.35;cursor:default}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+svg{display:block}
+#app{height:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column}
+.screen{flex:1;min-height:0;display:flex;flex-direction:column}
+.scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 16px 24px}
+.game{user-select:none;-webkit-user-select:none}
+
+/* top bar */
+.topbar{display:flex;align-items:center;gap:2px;padding:4px 6px;min-height:52px}
+.icon-btn{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;color:var(--ink);flex:none}
+.icon-btn:active{background:var(--key-2)}
+.icon-btn svg{width:24px;height:24px}
+.tb-title{flex:1;min-width:0;padding:0 6px;line-height:1.1}
+.tb-title b{font-family:var(--f-num);font-weight:800;font-size:26px;letter-spacing:.01em}
+.tb-title span{display:block;font-size:13px;color:var(--ink-2)}
+
+/* scoreboard */
+.board{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:8px;padding:0 10px}
+.pcard{background:var(--surface);border:2px solid transparent;border-radius:16px;padding:9px 12px 10px;min-width:0}
+.pcard.is-turn{border-color:var(--ink);background:var(--raised)}
+.pc-top{display:flex;align-items:center;gap:6px;min-width:0}
+.pc-name{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+.starter{width:8px;height:8px;border-radius:50%;background:var(--red);flex:none}
+.tally{display:flex;gap:3px;flex:none}
+.tally i{display:block;width:4px;height:16px;border-radius:2px;background:var(--line)}
+.tally i.on{background:var(--ink)}
+.pc-rem{font-family:var(--f-num);font-weight:800;font-size:var(--rem-size);line-height:.92;margin:4px 0 4px;white-space:nowrap;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.pcard:not(.is-turn) .pc-rem{color:var(--ink-2)}
+.pc-meta{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden}
+.pc-meta b{color:var(--ink);font-weight:700}
+.board.many .pc-meta{font-size:12px;gap:4px}
+.board.many .pcard{padding:8px 10px}
+.pc-meta .bust{color:var(--red);font-weight:700}
+.tag{font-size:11px;padding:1px 7px;border-radius:999px;background:var(--key-2);color:var(--ink-2);font-weight:700;flex:none}
+
+/* checkout strip */
+.strip{display:flex;align-items:center;gap:6px;min-height:46px;padding:6px 14px;overflow-x:auto;scrollbar-width:none}
+.strip::-webkit-scrollbar{display:none}
+.strip-l{font-size:14px;color:var(--ink-2);white-space:nowrap;margin-right:2px}
+.chip-co{font-family:var(--f-num);font-weight:800;font-size:22px;line-height:1;padding:5px 10px 4px;border-radius:8px;background:var(--surface);border:1px solid var(--line);white-space:nowrap}
+.chip-co.dbl{background:var(--red);color:#fff;border-color:transparent}
+
+/* input pad */
+.pad{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;padding:10px 10px 10px;background:var(--surface);border-radius:22px 22px 0 0;margin-top:auto}
+.pad-display{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 6px;min-height:48px}
+.pad-who{font-size:15px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pad-val{font-family:var(--f-num);font-weight:800;font-size:46px;line-height:1;font-variant-numeric:tabular-nums}
+.pad-val.is-empty{color:var(--ink-3)}
+.quick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:none}
+.quick::-webkit-scrollbar{display:none}
+.quick button{flex:1 0 auto;min-width:48px;height:40px;padding:0 10px;border-radius:999px;background:var(--key-2);font-weight:700;font-variant-numeric:tabular-nums}
+.quick button:active{background:var(--line)}
+.keys{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(42px,1fr);gap:8px}
+.key{border-radius:14px;background:var(--key);border:1px solid var(--line);font-size:28px;font-weight:700;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.key:active{background:var(--key-2)}
+.key.ok{background:var(--green);border-color:transparent;color:#fff;font-size:22px}
+.key.ok:active{filter:brightness(.9)}
+.key svg{width:28px;height:28px}
+
+.slots{display:flex;gap:6px;align-items:center;flex:1;min-width:0}
+.slot{min-width:54px;height:40px;padding:0 6px;border-radius:9px;border:1.5px dashed var(--line);display:grid;place-items:center;font-family:var(--f-num);font-weight:800;font-size:22px}
+.slot.full{border-style:solid;border-color:var(--ink-3);background:var(--raised)}
+.slot.d{color:var(--red)} .slot.t{color:var(--green)}
+.slot-sum{font-family:var(--f-num);font-weight:800;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
+.mods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;flex:none}
+.mods button{height:42px;border-radius:10px;background:var(--key-2);font-weight:700}
+.mods button.on{background:var(--ink);color:var(--bg)}
+.mods button.on[data-v="2"]{background:var(--red);color:#fff}
+.mods button.on[data-v="3"]{background:var(--green);color:#fff}
+.dgrid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:minmax(38px,1fr);gap:6px}
+.dgrid .key{font-size:21px;border-radius:11px}
+.dgrid.m2 .key.n{border-color:var(--red);color:var(--red)}
+.dgrid.m3 .key.n{border-color:var(--green);color:var(--green)}
+.dgrid .key.wide{grid-column:span 1}
+.botpad{align-items:center;justify-content:center;gap:16px}
+.botpad .slots{flex:none}
+.botpad .slot{min-width:78px;height:60px;font-size:30px}
+.bot-msg{color:var(--ink-2);margin:0}
+
+/* camera */
+.campad{gap:6px}
+.cam-slot{position:relative;flex:1;min-height:150px;border-radius:14px;overflow:hidden;background:#0b0f0d}
+.cam-view{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
+.cam-msg{position:absolute;inset:0;z-index:1;display:grid;place-items:center;padding:16px;text-align:center;color:#ece6d6;font-size:15px;background:rgba(11,15,13,.72)}
+.cam-status{margin:0;padding:0 6px;font-size:14px;color:var(--ink-2);min-height:20px}
+.cam-btns{display:flex;gap:8px;align-items:center;flex:none}
+.cam-btns .btn{flex:1;height:48px}
+button.slot{font-family:var(--f-num);font-weight:800;font-size:22px;color:inherit;background:transparent}
+button.slot.full{background:var(--raised)}
+button.slot.d{color:var(--red)} button.slot.t{color:var(--green)}
+.camcal .cal-stage{flex:1;min-height:0;padding:0 10px;display:flex}
+.camcal .cam-slot{flex:1}
+.camcal .cam-view{touch-action:none}
+.cal-help{padding:10px 16px 0;color:var(--ink-2);font-size:14px}
+.cal-help p{margin:0 0 6px}
+.fixpad{background:none;padding:6px 0 0;border-radius:0;flex:none}
+.fixpad .dgrid{height:300px;flex:none}
+#camhold{position:fixed;left:0;top:0;width:2px;height:2px;opacity:.01;pointer-events:none;overflow:hidden;z-index:-1}
+#camhold video{width:2px;height:2px}
+
+/* home */
+.home-head{display:flex;align-items:center;gap:12px;padding:20px 16px 4px}
+.home-head svg{width:46px;height:46px;flex:none}
+.brand{font-family:var(--f-num);font-weight:800;font-size:46px;line-height:.85;margin:0;letter-spacing:.01em}
+.sub{margin:4px 0 0;color:var(--ink-2);font-size:15px}
+.sec{margin-top:22px}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 10px}
+.sec-h h2{font-size:17px;font-weight:700;margin:0}
+.sec-h span{font-size:13px;color:var(--ink-2)}
+.prow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pnum{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--key-2);font-weight:700;font-size:14px;flex:none}
+.prow input,.prow select{flex:1;min-width:0;height:48px;border-radius:12px;border:1px solid var(--line);background:var(--raised);padding:0 14px;font-size:17px}
+.prow select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-2) 50%),linear-gradient(135deg,var(--ink-2) 50%,transparent 50%);background-position:calc(100% - 20px) 21px,calc(100% - 14px) 21px;background-size:6px 6px;background-repeat:no-repeat;padding-right:36px}
+.prow .tag{margin-left:-2px}
+.x{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--ink-2);flex:none}
+.x:active{background:var(--key-2)}
+.x svg{width:20px;height:20px}
+.row-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.btn{height:44px;padding:0 16px;border-radius:12px;font-weight:700;background:var(--key-2);white-space:nowrap}
+.btn:active{filter:brightness(.95)}
+.btn.primary{background:var(--green);color:#fff}
+.btn.danger{background:var(--red);color:#fff}
+.btn.ghost{background:transparent;border:1px solid var(--line)}
+.btn.big{height:56px;font-size:18px;width:100%;border-radius:16px}
+.btn.small{height:38px;padding:0 12px;font-size:15px}
+.recent{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.recent span{font-size:13px;color:var(--ink-2);margin-right:2px}
+.recent button{height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);font-size:14px}
+.opt{padding:12px 0;border-bottom:1px solid var(--line)}
+.opt:last-child{border-bottom:0}
+.opt-l{display:block;font-weight:700;margin-bottom:8px}
+.opt.inline{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.opt.inline .opt-l{margin:0}
+.opt-l small{display:block;font-weight:400;color:var(--ink-2);font-size:13px;margin-top:1px}
+.seg{display:flex;background:var(--key-2);border-radius:12px;padding:3px;gap:2px}
+.seg button{flex:1;height:38px;min-width:40px;padding:0 8px;border-radius:9px;font-weight:700;font-size:15px;color:var(--ink-2)}
+.seg button.on{background:var(--raised);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.18)}
+.switch{width:52px;height:32px;border-radius:999px;background:var(--line);position:relative;flex:none}
+.switch::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch.on{background:var(--green)}
+.switch.on::after{transform:translateX(20px)}
+.dock{padding:10px 16px 12px;display:flex;flex-direction:column;gap:6px}
+.linkbtn{height:40px;font-weight:700;color:var(--ink-2)}
+.resume{padding:14px;border-radius:16px;background:var(--surface);border:2px solid var(--ink);margin-top:14px}
+.resume p{margin:0 0 10px}
+.resume p b{display:block}
+.resume .row-btns{margin:0}
+
+/* end */
+.win{text-align:center;padding:18px 0 6px}
+.win p{margin:0;color:var(--ink-2)}
+.win-name{font-family:var(--f-num);font-weight:800;font-size:clamp(56px,18vw,100px);line-height:.9;margin:8px 0 6px;overflow-wrap:anywhere}
+.win-score{font-family:var(--f-num);font-weight:800;font-size:34px;color:var(--ink-2)}
+.tbl-wrap{overflow-x:auto;margin-top:14px}
+table.stats{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:15px}
+table.stats th,table.stats td{padding:9px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+table.stats th:first-child,table.stats td:first-child{text-align:left;color:var(--ink-2);font-weight:400;padding-left:0}
+table.stats thead th{font-weight:700;color:var(--ink);max-width:110px;overflow:hidden;text-overflow:ellipsis}
+table.stats td small{color:var(--ink-3);font-size:12px;margin-left:4px}
+table.stats td.best{font-weight:700}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 16px 12px}
+.actions .btn{height:54px;font-size:17px;border-radius:16px}
+
+/* history */
+.hitem{background:var(--surface);border-radius:16px;margin-bottom:10px}
+.hhead{width:100%;text-align:left;padding:12px 14px;display:block}
+.hdate{font-size:13px;color:var(--ink-2)}
+.hp{display:flex;justify-content:space-between;gap:10px;margin-top:4px}
+.hp span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hp.w{font-weight:700}
+.hp .hl{font-variant-numeric:tabular-nums;white-space:nowrap}
+.hbody{padding:0 14px 12px}
+.hbody .tbl-wrap{margin-top:0}
+.pstat{background:var(--surface);border-radius:16px;padding:12px 14px;margin-bottom:10px}
+.pstat h3{margin:0;font-size:18px}
+.pstat p{margin:2px 0 8px;font-size:13px;color:var(--ink-2)}
+.pgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 10px}
+.pgrid div{font-size:12px;color:var(--ink-2)}
+.pgrid b{display:block;font-family:var(--f-num);font-weight:800;font-size:26px;color:var(--ink);line-height:1.05}
+.empty{padding:48px 12px;text-align:center;color:var(--ink-2)}
+.clear{margin-top:16px;width:100%}
+
+/* overlays */
+.overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:var(--scrim)}
+.overlay.center{align-items:center;padding:20px}
+.sheet{width:100%;max-width:560px;max-height:88%;overflow:auto;background:var(--raised);border-radius:22px 22px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px))}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sheet-h h2,.dialog h2{font-family:var(--f-num);font-weight:800;font-size:30px;margin:0;line-height:1}
+.dialog{width:100%;max-width:380px;background:var(--raised);border-radius:20px;padding:20px}
+.dialog p{margin:10px 0 16px;color:var(--ink-2)}
+.dialog .q{margin:14px 0 8px;color:var(--ink);font-weight:700}
+.choice{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px}
+.choice button{height:60px;border-radius:14px;background:var(--key-2);font-family:var(--f-num);font-weight:800;font-size:32px}
+.choice button:active{background:var(--line)}
+.dialog .row-btns{justify-content:flex-end;margin-top:18px}
+.sheet .opt:first-of-type{padding-top:4px}
+
+#toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 58px);transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:12px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .18s;max-width:88%;text-align:center}
+#toast.show{opacity:1}
+#toast.big{top:42%;font-family:var(--f-num);font-weight:800;font-size:72px;line-height:1;padding:16px 30px;background:var(--red);color:#fff}
+
+@media (min-height:760px){ .key{font-size:30px} }
+@media (max-height:640px){ .pc-meta{display:none} .strip{min-height:40px;padding-top:2px;padding-bottom:2px} .quick button{height:36px} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="layer"></div>
+<div id="camhold" aria-hidden="true"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+// ---------- Darts engine (pure functions) ----------
+const SEG_ORDER = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+const R = { ib: 6.35, ob: 15.9, ti: 99, to: 107, di: 162, do: 170 };
+
+// All single darts: {m: 1|2|3, n: 1..20|25, v, label}
+const DARTS = [];
+for (let n = 1; n <= 20; n++) {
+  DARTS.push({ m: 1, n, v: n, label: String(n) });
+  DARTS.push({ m: 2, n, v: 2 * n, label: 'D' + n });
+  DARTS.push({ m: 3, n, v: 3 * n, label: 'T' + n });
+}
+DARTS.push({ m: 1, n: 25, v: 25, label: '25' });
+DARTS.push({ m: 2, n: 25, v: 50, label: 'Bull' });
+
+const DOUBLE_TIER = {40:0,32:0,16:1,36:2,24:2,20:3,8:3,12:4,28:4,50:8};
+function finishCost(d) { return DOUBLE_TIER[d.v] ?? 6; }
+function setupCost(d) {
+  if (d.n === 25) return d.m === 2 ? 20 : 15;
+  if (d.m === 3) return 20 - d.n;
+  if (d.m === 1) return 1 + (20 - d.n) * 0.3;
+  return 15 + (20 - d.n) * 0.1; // doubles as setup: rarely preferred
+}
+const labelSortCost = d => setupCost(d);
+
+const coMemo = new Map();
+function bestCheckout(n, k, doubleOut = true) {
+  const key = n + ':' + k + ':' + doubleOut;
+  if (coMemo.has(key)) return coMemo.get(key);
+  let best = null, bestCost = Infinity;
+  const finishers = doubleOut ? DARTS.filter(d => d.m === 2) : DARTS;
+  const fin = (d) => doubleOut ? finishCost(d) : (d.m === 3 ? 0 : d.m === 1 ? 1 : 2) + (20 - Math.min(d.n, 20)) * 0.1;
+  const consider = (route, cost) => { if (cost < bestCost) { bestCost = cost; best = route; } };
+  for (let darts = 1; darts <= k && !best; darts++) {
+    if (darts === 1) {
+      for (const f of finishers) if (f.v === n) consider([f], fin(f) * 3);
+    } else if (darts === 2) {
+      for (const a of DARTS) for (const f of finishers)
+        if (a.v + f.v === n) consider([a, f], fin(f) * 3 + setupCost(a));
+    } else {
+      for (let i = 0; i < DARTS.length; i++) for (let j = i; j < DARTS.length; j++) {
+        const a = DARTS[i], b = DARTS[j], rest = n - a.v - b.v;
+        if (rest <= 0) continue;
+        for (const f of finishers) if (f.v === rest) {
+          const s = [a, b].sort((x, y) => labelSortCost(x) - labelSortCost(y));
+          consider([s[0], s[1], f], fin(f) * 3 + setupCost(a) + setupCost(b));
+        }
+      }
+    }
+  }
+  coMemo.set(key, best);
+  return best;
+}
+function minCheckoutDarts(n, doubleOut = true) {
+  for (let k = 1; k <= 3; k++) if (bestCheckout(n, k, doubleOut)) return k;
+  return Infinity;
+}
+const isDoubleFinish = n => (n > 0 && n <= 40 && n % 2 === 0) || n === 50;
+
+// Achievable 3-dart totals
+const ACHIEVABLE = new Set();
+(function () {
+  const vals = [0, ...new Set(DARTS.map(d => d.v))];
+  for (const a of vals) for (const b of vals) for (const c of vals) ACHIEVABLE.add(a + b + c);
+})();
+
+// ---------- Board geometry & bot ----------
+function segAngleDeg(n) { return SEG_ORDER.indexOf(n) * 18; } // clockwise from top
+function targetPoint(d) {
+  if (d.n === 25) return { x: 0, y: d.m === 2 ? 0 : 11 };
+  const r = d.m === 3 ? 103 : d.m === 2 ? 166 : 134;
+  const a = segAngleDeg(d.n) * Math.PI / 180;
+  return { x: r * Math.sin(a), y: r * Math.cos(a) };
+}
+function scorePoint(x, y) {
+  const r = Math.hypot(x, y);
+  if (r <= R.ib) return DARTS.find(d => d.label === 'Bull');
+  if (r <= R.ob) return DARTS.find(d => d.label === '25');
+  if (r > R.do) return { m: 0, n: 0, v: 0, label: 'Mis' };
+  let a = Math.atan2(x, y) * 180 / Math.PI; if (a < 0) a += 360;
+  const n = SEG_ORDER[Math.floor((a + 9) / 18) % 20];
+  const m = (r >= R.ti && r <= R.to) ? 3 : (r >= R.di) ? 2 : 1;
+  return DARTS.find(d => d.n === n && d.m === m);
+}
+function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+const byLabel = l => DARTS.find(d => d.label === l);
+const GOOD_LEAVES = [32, 40, 16, 36, 24, 20, 8, 12, 28, 4, 18, 30, 26, 34, 38, 10, 22, 14, 6, 2];
+function botAim(rem, dartsLeft, doubleOut) {
+  if (doubleOut) {
+    const route = bestCheckout(rem, dartsLeft, true);
+    if (route) return route[0];
+    if (rem <= 60) {
+      for (const leave of GOOD_LEAVES) { const s = rem - leave; if (s >= 1 && s <= 20) return byLabel(String(s)); }
+      if (rem - 25 >= 2 && isDoubleFinish(rem - 25)) return byLabel('25');
+      return byLabel(String(Math.min(20, Math.max(1, rem - 2))));
+    }
+    if (rem - 60 < 2 || rem < 62) return byLabel('20');
+    return byLabel('T20');
+  } else {
+    const route = bestCheckout(rem, dartsLeft, false);
+    if (route) return route[0];
+    return rem >= 60 ? byLabel('T20') : byLabel(String(Math.min(20, rem)));
+  }
+}
+function botThrow(aim, sigma) {
+  const t = targetPoint(aim);
+  return scorePoint(t.x + gauss() * sigma, t.y + gauss() * sigma);
+}
+
+// ================= App =================
+const LEVELS = [
+  { k: 'b30', name: 'Beginner', avg: 30, sigma: 25 },
+  { k: 'b40', name: 'Café', avg: 40, sigma: 20 },
+  { k: 'b50', name: 'Club', avg: 50, sigma: 16 },
+  { k: 'b65', name: 'Gevorderd', avg: 65, sigma: 12 },
+  { k: 'b80', name: 'Sterk', avg: 80, sigma: 9.2 },
+  { k: 'b100', name: 'Profniveau', avg: 100, sigma: 6.4 },
+];
+const levelOf = k => LEVELS.find(l => l.k === k) || LEVELS[2];
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('oche.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('oche.' + k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem('oche.' + k); } catch (e) {} },
+};
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nf1 = new Intl.NumberFormat('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fmtAvg = (p, d) => d ? nf1.format(p / d * 3) : '–';
+const fmtPct = (a, b) => b ? Math.round(a / b * 100) + '%' : '–';
+const dateFmt = new Intl.DateTimeFormat('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+const DEFAULTS = { start: 501, legs: 3, doubleOut: true, mode: 'keypad', call: false, theme: 'auto', players: [{ name: '', bot: null }, { name: '', bot: null }] };
+let settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
+if (!Array.isArray(settings.players) || !settings.players.length) settings.players = DEFAULTS.players.map(p => ({ ...p }));
+let history = store.get('history', []);
+if (!Array.isArray(history)) history = [];
+let m = store.get('match', null);
+if (m && (!Array.isArray(m.turns) || !Array.isArray(m.players))) m = null;
+if (m && derive(m).done) { m = null; store.del('match'); }
+
+const ui = { screen: m ? 'game' : 'home', input: '', mod: 1, sheet: null, modal: null, histTab: 'matches', open: null, fix: null, calReturn: 'home' };
+
+const saveSettings = () => store.set('settings', settings);
+const saveMatch = () => { if (m) store.set('match', m); else store.del('match'); };
+const saveHistory = () => store.set('history', history);
+
+function applyTheme() {
+  const r = document.documentElement;
+  if (settings.theme === 'light' || settings.theme === 'dark') r.setAttribute('data-theme', settings.theme);
+  else r.removeAttribute('data-theme');
+}
+
+// ---------- match model ----------
+function derive(mm) {
+  const n = mm.players.length;
+  const rem = Array(n).fill(mm.start), legs = Array(n).fill(0), last = Array(n).fill(null);
+  let leg = 1, starter = mm.first, cur = mm.first, done = false, winner = null;
+  for (const t of mm.turns) {
+    if (t.co) {
+      legs[t.p]++;
+      if (legs[t.p] >= mm.legsToWin) { done = true; winner = t.p; rem[t.p] = 0; last[t.p] = t; break; }
+      leg++; starter = (starter + 1) % n; cur = starter; rem.fill(mm.start); last.fill(null);
+    } else {
+      rem[t.p] -= t.s; last[t.p] = t; cur = (t.p + 1) % n;
+    }
+  }
+  return { rem, legs, leg, starter, cur, done, winner, last };
+}
+const pendSum = () => m.pend.reduce((a, d) => a + d.v, 0);
+const pname = i => m.players[i].name;
+
+function playerStats(mm, p) {
+  const s = { pts: 0, darts: 0, f9p: 0, f9d: 0, co: 0, dd: 0, hi: 0, hico: 0, t180: 0, t140: 0, t100: 0, bestLeg: 0, legs: 0 };
+  const legD = {};
+  for (const t of mm.turns) if (t.p === p) {
+    s.pts += t.s; s.darts += t.d; s.dd += t.dd || 0;
+    if (t.i <= 3) { s.f9p += t.s; s.f9d += t.d; }
+    legD[t.leg] = (legD[t.leg] || 0) + t.d;
+    if (t.s > s.hi) s.hi = t.s;
+    if (t.s === 180) s.t180++; else if (t.s >= 140) s.t140++; else if (t.s >= 100) s.t100++;
+    if (t.co) { s.co++; s.legs++; if (t.s > s.hico) s.hico = t.s; const ld = legD[t.leg]; if (!s.bestLeg || ld < s.bestLeg) s.bestLeg = ld; }
+  }
+  return s;
+}
+
+function startMatch(opts) {
+  const players = opts ? opts.players : settings.players.map((p, i) => ({
+    name: p.bot ? 'Bot' + (settings.players.filter(q => q.bot).length > 1 ? ' ' + (settings.players.filter((q, k) => q.bot && k <= i).length) : '') : ((p.name || '').trim() || 'Speler ' + (i + 1)),
+    bot: p.bot || null,
+  }));
+  m = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    created: Date.now(),
+    start: opts ? opts.start : settings.start,
+    legsToWin: opts ? opts.legsToWin : settings.legs,
+    doubleOut: opts ? opts.doubleOut : settings.doubleOut,
+    players, first: opts ? opts.first : 0, turns: [], pend: [], saved: false,
+  };
+  ui.input = ''; ui.mod = 1; ui.sheet = null; ui.modal = null; ui.screen = 'game';
+  cam.staged = []; camResetFrames();
+  if (settings.mode === 'camera' && !cam.cal) { ui.calReturn = 'game'; ui.screen = 'camcal'; cam.edit = null; }
+  saveMatch(); render(); keepAwake(true);
+}
+
+function commit(t) {
+  const D = derive(m);
+  t.leg = D.leg;
+  t.i = m.turns.filter(x => x.p === t.p && x.leg === D.leg).length + 1;
+  m.turns.push(t);
+  m.pend = [];
+  ui.input = ''; ui.mod = 1;
+  const D2 = derive(m);
+  const name = pname(t.p);
+  if (t.co) {
+    if (D2.done) {
+      if (!m.saved) { history.unshift(historyEntry(m, D2)); history = history.slice(0, 300); m.saved = true; saveHistory(); }
+      speak(`Game shot en de wedstrijd. ${name} wint`);
+    } else {
+      toast(`Leg voor ${name}. ${pname(D2.cur)} begint leg ${D2.leg}.`, 2600);
+      speak(`Game shot. Leg voor ${name}`);
+    }
+  } else if (t.b) {
+    toast('Bust'); speak('Bust');
+  } else {
+    if (t.s === 180) toast('180', 1200, true);
+    speak(t.s === 0 ? 'Geen score' : String(t.s));
+    const nx = D2.cur, r = D2.rem[nx];
+    if (!m.players[nx].bot && r <= 170 && bestCheckout(r, 3, m.doubleOut)) speak(`${pname(nx)}, nog ${r}`);
+  }
+  saveMatch();
+}
+
+function historyEntry(mm, D) {
+  return {
+    id: mm.id, date: Date.now(), start: mm.start, legsToWin: mm.legsToWin, doubleOut: mm.doubleOut, winner: D.winner,
+    players: mm.players.map((p, i) => ({ name: p.name, bot: p.bot, legs: D.legs[i], st: playerStats(mm, i) })),
+  };
+}
+
+// ---------- input: keypad ----------
+function submitKeypad(val) {
+  const s = val == null ? parseInt(ui.input || '0', 10) : val;
+  if (!ACHIEVABLE.has(s)) { toast(`${s} kun je niet met drie pijlen gooien`); ui.input = ''; render(); return; }
+  const D = derive(m), p = D.cur, st = D.rem[p], dOut = m.doubleOut;
+  const minD = minCheckoutDarts(st, dOut);
+  if (s === st) {
+    if (minD === Infinity) { toast(`${st} kun je niet in één beurt uitgooien`); ui.input = ''; render(); return; }
+    const dartOpts = []; for (let k = minD; k <= 3; k++) dartOpts.push(k);
+    ui.modal = { type: 'turn', kind: 'co', p, st, s, dartOpts, darts: dartOpts.length === 1 ? dartOpts[0] : null, minD };
+    return advanceTurnModal();
+  }
+  const bust = s > st || (dOut && st - s === 1);
+  const askDD = dOut && st <= 50 && minD <= 3;
+  if (askDD) {
+    ui.modal = { type: 'turn', kind: bust ? 'bust' : 'normal', p, st, s, minD, darts: 3 };
+    return advanceTurnModal();
+  }
+  commit(bust ? { p, s: 0, d: 3, dd: 0, b: true, st } : { p, s, d: 3, dd: 0, st });
+  render();
+}
+function ddOptions(q) {
+  if (!m.doubleOut) return [0];
+  if (q.kind === 'co') { const max = q.darts - (q.minD - 1); const o = []; for (let k = 1; k <= max; k++) o.push(k); return o; }
+  const max = 3 - (q.minD - 1); const o = []; for (let k = 0; k <= max; k++) o.push(k); return o;
+}
+function advanceTurnModal() {
+  const q = ui.modal;
+  if (q.darts == null) { render(); return; }
+  const opts = ddOptions(q);
+  if (q.dd == null && opts.length === 1) q.dd = opts[0];
+  if (q.dd == null) { render(); return; }
+  ui.modal = null;
+  if (q.kind === 'co') commit({ p: q.p, s: q.st, d: q.darts, dd: q.dd, co: true, st: q.st });
+  else if (q.kind === 'bust') commit({ p: q.p, s: 0, d: 3, dd: q.dd, b: true, st: q.st });
+  else commit({ p: q.p, s: q.s, d: 3, dd: q.dd, st: q.st });
+  render();
+}
+
+// ---------- input: per dart ----------
+function addDart(d) {
+  const D = derive(m), p = D.cur, st = D.rem[p];
+  const before = st - pendSum();
+  const after = before - d.v;
+  m.pend.push({ l: d.label, v: d.v, m: d.m });
+  const dd = () => { let r = st, c = 0; for (const x of m.pend) { if (m.doubleOut && isDoubleFinish(r)) c++; r -= x.v; } return c; };
+  const x = () => m.pend.map(z => z.l);
+  const bust = after < 0 || (m.doubleOut && after === 1) || (after === 0 && m.doubleOut && d.m !== 2);
+  if (bust) commit({ p, s: 0, d: 3, dd: dd(), b: true, st, x: x() });
+  else if (after === 0) commit({ p, s: st, d: m.pend.length, dd: dd(), co: true, st, x: x() });
+  else if (m.pend.length === 3) commit({ p, s: pendSum(), d: 3, dd: dd(), st, x: x() });
+  else saveMatch();
+}
+
+// ---------- undo ----------
+function undo() {
+  stopBot();
+  if (!m) return;
+  const D0 = derive(m), botTurn = !D0.done && !!m.players[D0.cur].bot;
+  if (settings.mode === 'camera' && !botTurn && !D0.done && cam.staged.length) { cam.staged.pop(); cam.state = 'throw'; render(); return; }
+  if (settings.mode === 'camera') { cam.staged = []; camResetFrames(); }
+  if (m.pend.length && !botTurn) { m.pend.pop(); saveMatch(); render(); return; }
+  m.pend = [];
+  if (!m.turns.length) { if (!botTurn) toast('Er is nog niets om terug te zetten'); saveMatch(); render(); return; }
+  if (m.saved) { history = history.filter(h => h.id !== m.id); m.saved = false; saveHistory(); }
+  m.turns.pop();
+  while (m.turns.length && m.players[derive(m).cur].bot) m.turns.pop();
+  ui.input = ''; ui.mod = 1; ui.screen = 'game';
+  saveMatch(); render();
+}
+
+// ---------- bot ----------
+let botTimer = null, botToken = 0;
+function stopBot() { if (botTimer) clearTimeout(botTimer); botTimer = null; botToken++; ui.hold = null; }
+function maybeBot() {
+  if (botTimer || !m || ui.screen !== 'game') return;
+  const D = derive(m);
+  if (D.done || !m.players[D.cur].bot) return;
+  const tok = botToken;
+  botTimer = setTimeout(() => {
+    botTimer = null;
+    if (tok !== botToken || !m || ui.screen !== 'game') return;
+    if (ui.modal || ui.sheet || ui.hold) { maybeBot(); return; }
+    const D = derive(m), p = D.cur, pl = m.players[p];
+    if (D.done || !pl.bot) return;
+    const rem = D.rem[p] - pendSum();
+    const aim = botAim(rem, 3 - m.pend.length, m.doubleOut);
+    const n0 = m.turns.length;
+    addDart(botThrow(aim, levelOf(pl.bot).sigma));
+    if (m.turns.length > n0 && !derive(m).done) {
+      ui.hold = { t: m.turns[m.turns.length - 1] };
+      const hTok = botToken;
+      setTimeout(() => { if (hTok === botToken && ui.hold) { ui.hold = null; render(); } }, 1300);
+    }
+    render();
+  }, m.pend.length ? 650 : 900);
+}
+
+// ---------- speech, toast, wake lock ----------
+function speak(text) {
+  if (!settings.call) return;
+  try { const u = new SpeechSynthesisUtterance(text); u.lang = 'nl-NL'; u.rate = 1.02; speechSynthesis.speak(u); } catch (e) {}
+}
+let toastTimer = null;
+function toast(text, ms = 1600, big = false) {
+  const el = document.getElementById('toast');
+  el.textContent = text; el.className = 'show' + (big ? ' big' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.className = big ? 'big' : ''; }, ms);
+}
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on && 'wakeLock' in navigator && !wakeLock && document.visibilityState === 'visible') {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ui.screen === 'game') keepAwake(true); });
+
+// ---------- icons ----------
+const I = {
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/></svg>',
+  stats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>',
+  bksp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H9l-6 7 6 7h12z"/><path d="M13 9l5 6M18 9l-5 6"/></svg>',
+  board: '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="23" fill="var(--ink)"/><circle cx="24" cy="24" r="19" fill="none" stroke="var(--red)" stroke-width="3" stroke-dasharray="3.73 3.73"/><circle cx="24" cy="24" r="19" fill="none" stroke="var(--green)" stroke-width="3" stroke-dasharray="3.73 3.73" stroke-dashoffset="3.73"/><circle cx="24" cy="24" r="11" fill="none" stroke="var(--red)" stroke-width="2.6" stroke-dasharray="2.16 2.16"/><circle cx="24" cy="24" r="11" fill="none" stroke="var(--green)" stroke-width="2.6" stroke-dasharray="2.16 2.16" stroke-dashoffset="2.16"/><circle cx="24" cy="24" r="3.6" fill="var(--green)"/><circle cx="24" cy="24" r="1.7" fill="var(--red)"/></svg>',
+};
+
+// ---------- render ----------
+function render() {
+  applyTheme();
+  const sc = document.querySelector('#app .scroll');
+  const keep = sc ? { screen: ui._lastScreen, top: sc.scrollTop } : null;
+  let html = '';
+  if (ui.screen === 'game' && m) html = derive(m).done ? renderEnd() : renderGame();
+  else if (ui.screen === 'camcal') html = renderCamCal();
+  else if (ui.screen === 'history') html = renderHistory();
+  else { ui.screen = 'home'; html = renderHome(); }
+  document.getElementById('app').innerHTML = html;
+  const sc2 = document.querySelector('#app .scroll');
+  if (sc2 && keep && keep.screen === ui.screen) sc2.scrollTop = keep.top;
+  ui._lastScreen = ui.screen;
+  document.getElementById('layer').innerHTML = renderLayer();
+  maybeBot();
+  camSync();
+}
+
+const MODE_OPTS = [['keypad', 'Totaal'], ['darts', 'Per pijl'], ['camera', 'Camera']];
+function seg(key, opts, cur) {
+  return `<div class="seg" role="group">${opts.map(([v, l]) => `<button data-a="set" data-k="${key}" data-v="${v}" class="${String(cur) === String(v) ? 'on' : ''}" aria-pressed="${String(cur) === String(v)}">${l}</button>`).join('')}</div>`;
+}
+
+function recentNames() {
+  const seen = new Set(settings.players.filter(p => !p.bot).map(p => (p.name || '').trim().toLowerCase()));
+  const out = [];
+  for (const h of history) for (const p of h.players) {
+    if (p.bot) continue; const k = p.name.toLowerCase();
+    if (!seen.has(k) && !/^speler \d$/.test(k)) { seen.add(k); out.push(p.name); }
+    if (out.length >= 8) return out;
+  }
+  return out;
+}
+
+function renderHome() {
+  let resume = '';
+  if (m) {
+    const D = derive(m);
+    const score = m.players.map((p, i) => `${esc(p.name)} ${D.legs[i]}`).join(', ');
+    resume = `<div class="resume"><p><b>Wedstrijd bezig</b>${score}, leg ${D.leg}</p><div class="row-btns"><button class="btn primary" data-a="resume">Hervatten</button><button class="btn ghost" data-a="discard">Stoppen</button></div></div>`;
+  }
+  const n = settings.players.length;
+  const rows = settings.players.map((p, i) => `
+    <div class="prow">
+      <span class="pnum" aria-hidden="true">${i + 1}</span>
+      ${p.bot
+        ? `<span class="tag">Bot</span><select data-level-i="${i}" aria-label="Niveau van bot ${i + 1}">${LEVELS.map(l => `<option value="${l.k}" ${l.k === p.bot ? 'selected' : ''}>${l.name}, gemiddeld ~${l.avg}</option>`).join('')}</select>`
+        : `<input data-name-i="${i}" value="${esc(p.name || '')}" placeholder="Speler ${i + 1}" maxlength="16" autocomplete="off" autocapitalize="words" enterkeyhint="done" aria-label="Naam speler ${i + 1}">`}
+      ${n > 1 ? `<button class="x" data-a="remove-player" data-i="${i}" aria-label="Verwijder speler ${i + 1}">${I.x}</button>` : ''}
+    </div>`).join('');
+  const rec = recentNames();
+  return `<div class="screen">
+    <div class="scroll">
+      <header class="home-head">${I.board}<div><h1 class="brand">Oche</h1><p class="sub">Darts scorebord</p></div></header>
+      ${resume}
+      <section class="sec">
+        <div class="sec-h"><h2>Spelers</h2><span>${n > 1 ? 'Nummer 1 begint' : 'Solo oefenen'}</span></div>
+        ${rows}
+        <div class="row-btns">
+          <button class="btn small" data-a="add-player" ${n >= 4 ? 'disabled' : ''}>Speler toevoegen</button>
+          <button class="btn small" data-a="add-bot" ${n >= 4 ? 'disabled' : ''}>Bot toevoegen</button>
+          ${n > 1 ? '<button class="btn small ghost" data-a="shuffle">Husselen</button>' : ''}
+        </div>
+        ${rec.length && n < 4 ? `<div class="recent"><span>Eerder gespeeld</span>${rec.map(r => `<button data-a="recent" data-name="${esc(r)}">${esc(r)}</button>`).join('')}</div>` : ''}
+      </section>
+      <section class="sec">
+        <div class="sec-h"><h2>Spel</h2></div>
+        <div class="opt"><span class="opt-l">Startscore</span>${seg('start', [[301, '301'], [501, '501'], [701, '701']], settings.start)}</div>
+        <div class="opt"><span class="opt-l">Legs om te winnen</span>${seg('legs', [1, 2, 3, 4, 5, 7].map(v => [v, v]), settings.legs)}</div>
+        <div class="opt"><span class="opt-l">Uitgooien</span>${seg('doubleOut', [[true, 'Op een dubbel'], [false, 'Op alles']], settings.doubleOut)}</div>
+        <div class="opt"><span class="opt-l">Score invoeren<small>${settings.mode === 'camera' ? 'De camera herkent je pijlen; tik op een pijl om hem te verbeteren' : 'Per pijl en camera geven preciezere statistieken'}</small></span>${seg('mode', MODE_OPTS, settings.mode)}</div>
+        ${settings.mode === 'camera' ? `<div class="opt inline"><span class="opt-l">Camera<small>${cam.cal ? 'Ingesteld' : 'Nog niet ingesteld'}</small></span><button class="btn small" data-a="cam-cal">${cam.cal ? 'Opnieuw instellen' : 'Instellen'}</button></div>` : ''}
+        <div class="opt inline"><span class="opt-l">Scores omroepen<small>Je telefoon zegt de score hardop</small></span><button class="switch ${settings.call ? 'on' : ''}" role="switch" aria-checked="${settings.call}" aria-label="Scores omroepen" data-a="toggle-call"></button></div>
+        <div class="opt"><span class="opt-l">Weergave</span>${seg('theme', [['auto', 'Automatisch'], ['light', 'Licht'], ['dark', 'Donker']], settings.theme)}</div>
+      </section>
+    </div>
+    <div class="dock">
+      <button class="btn primary big" data-a="start">Start wedstrijd</button>
+      <button class="linkbtn" data-a="history">Geschiedenis en statistieken</button>
+    </div>
+  </div>`;
+}
+
+function dartCls(l) { return l[0] === 'D' || l === 'Bull' ? 'd' : l[0] === 'T' ? 't' : ''; }
+function slotsHtml(pend) {
+  return [0, 1, 2].map(i => { const d = pend[i]; return `<span class="slot ${d ? 'full ' + dartCls(d.l) : ''}">${d ? (d.v === 0 ? 'Mis' : d.l) : ''}</span>`; }).join('');
+}
+
+function renderGame() {
+  const D = derive(m), n = m.players.length, p = D.cur, pl = m.players[p];
+  const camTurn = settings.mode === 'camera' && !pl.bot;
+  const cinfo = camTurn ? stagedInfo() : null;
+  const ps = camTurn ? cinfo.sum : pendSum();
+  const remSize = n === 1 ? 'clamp(88px,32vw,150px)' : n === 2 ? 'clamp(66px,21vw,112px)' : 'clamp(46px,13vw,74px)';
+  const cols = n === 1 ? 1 : 2;
+  const cards = m.players.map((pp, i) => {
+    const st = playerStats(m, i);
+    const t = D.last[i];
+    let last = '';
+    if (t) last = t.b ? '<span class="bust">bust</span>' : `vorige <b>${t.s}</b>`;
+    const r = D.rem[i] - (i === p ? ps : 0);
+    const tally = Array.from({ length: m.legsToWin }, (_, k) => `<i class="${k < D.legs[i] ? 'on' : ''}"></i>`).join('');
+    return `<div class="pcard ${i === p ? 'is-turn' : ''}" aria-current="${i === p}">
+      <div class="pc-top">${n > 1 && i === D.starter ? '<span class="starter" title="Begon deze leg"></span>' : ''}<span class="pc-name">${esc(pp.name)}</span>${pp.bot ? `<span class="tag" title="Bot met een gemiddelde van ongeveer ${levelOf(pp.bot).avg}">~${levelOf(pp.bot).avg}</span>` : ''}<span class="tally" aria-label="${D.legs[i]} van ${m.legsToWin} legs">${tally}</span></div>
+      <div class="pc-rem">${r}</div>
+      <div class="pc-meta"><span>gem <b>${fmtAvg(st.pts, st.darts)}</b></span><span>${last}</span></div>
+    </div>`;
+  }).join('');
+
+  const live = D.rem[p] - ps, left = 3 - (camTurn ? cam.staged.length : m.pend.length);
+  const route = left > 0 && !(cinfo && cinfo.done) ? bestCheckout(live, left, m.doubleOut) : null;
+  let strip = '';
+  if (cinfo && cinfo.done) strip = '';
+  else if (route) strip = `<span class="strip-l">Uitgooien</span>${route.map((d, k) => `<span class="chip-co ${k === route.length - 1 && m.doubleOut ? 'dbl' : ''}">${d.label}</span>`).join('')}`;
+  else if (live <= 170 && m.doubleOut) strip = `<span class="strip-l">Geen finish met ${left} ${left === 1 ? 'pijl' : 'pijlen'}</span>`;
+
+  let pad;
+  if (ui.hold) {
+    const h = ui.hold, t = h.t;
+    const msg = t.co ? `${esc(pname(t.p))} gooit ${t.s} uit` : t.b ? `Bust voor ${esc(pname(t.p))}` : `${esc(pname(t.p))} gooit ${t.s}`;
+    pad = `<div class="pad botpad"><div class="slots">${slotsHtml(t.x.map(l => ({ l, v: l === 'Mis' ? 0 : 1 })))}</div><p class="bot-msg">${msg}</p></div>`;
+  } else if (pl.bot) {
+    pad = `<div class="pad botpad"><div class="slots">${slotsHtml(m.pend)}</div><p class="bot-msg">${esc(pl.name)} gooit…</p></div>`;
+  } else if (camTurn) {
+    pad = renderCamPad(cinfo);
+  } else if (settings.mode === 'darts') {
+    const mod = ui.mod, pre = mod === 2 ? 'D' : mod === 3 ? 'T' : '';
+    const nums = Array.from({ length: 20 }, (_, k) => `<button class="key n" data-a="dart" data-n="${k + 1}" aria-label="${pre}${k + 1}">${pre}${k + 1}</button>`).join('');
+    pad = `<div class="pad">
+      <div class="pad-display"><div class="slots">${slotsHtml(m.pend)}</div><span class="slot-sum">${ps}</span></div>
+      <div class="mods">${[[1, 'Enkel'], [2, 'Dubbel'], [3, 'Triple']].map(([v, l]) => `<button data-a="mod" data-v="${v}" class="${mod === v ? 'on' : ''}" aria-pressed="${mod === v}">${l}</button>`).join('')}</div>
+      <div class="dgrid m${mod}">${nums}
+        <button class="key" data-a="dart" data-n="25" ${mod === 3 ? 'disabled' : ''}>${mod === 2 ? 'Bull' : '25'}</button>
+        <button class="key" data-a="miss" style="grid-column:span 2">Mis</button>
+        <button class="key" data-a="dart-back" aria-label="Laatste pijl wissen" style="grid-column:span 2" ${m.pend.length ? '' : 'disabled'}>${I.bksp}</button>
+      </div>
+    </div>`;
+  } else {
+    const quick = [26, 41, 45, 60, 81, 85, 100, 140, 180];
+    pad = `<div class="pad">
+      <div class="pad-display"><span class="pad-who">Beurt van ${esc(pl.name)}</span><span class="pad-val ${ui.input ? '' : 'is-empty'}">${ui.input || '0'}</span></div>
+      <div class="quick">${quick.map(v => `<button data-a="quick" data-v="${v}">${v}</button>`).join('')}</div>
+      <div class="keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(k => `<button class="key" data-a="key" data-v="${k}">${k}</button>`).join('')}
+        <button class="key" data-a="bksp" aria-label="Wissen">${I.bksp}</button>
+        <button class="key" data-a="key" data-v="0">0</button>
+        <button class="key ok" data-a="ok">${ui.input && parseInt(ui.input, 10) === D.rem[p] ? 'Uit!' : 'OK'}</button>
+      </div>
+    </div>`;
+  }
+
+  return `<div class="screen game">
+    <header class="topbar">
+      <button class="icon-btn" data-a="home" aria-label="Naar menu">${I.back}</button>
+      <div class="tb-title"><b>Leg ${D.leg}</b><span>${m.start}, eerste tot ${m.legsToWin} ${m.legsToWin === 1 ? 'leg' : 'legs'}</span></div>
+      <button class="icon-btn" data-a="sheet" data-v="stats" aria-label="Statistieken">${I.stats}</button>
+      <button class="icon-btn" data-a="undo" aria-label="Ongedaan maken">${I.undo}</button>
+      <button class="icon-btn" data-a="sheet" data-v="menu" aria-label="Opties">${I.more}</button>
+    </header>
+    <div class="board ${n > 2 ? 'many' : ''}" style="--cols:${cols};--rem-size:${remSize}">${cards}</div>
+    <div class="strip" aria-live="polite">${strip}</div>
+    ${pad}
+  </div>`;
+}
+
+const STAT_ROWS = [
+  ['Gemiddelde', s => fmtAvg(s.pts, s.darts), s => s.darts ? s.pts / s.darts : -1],
+  ['Eerste 9', s => fmtAvg(s.f9p, s.f9d), s => s.f9d ? s.f9p / s.f9d : -1],
+  ['Uitgooi %', (s, dOut) => dOut && s.dd ? `${fmtPct(s.co, s.dd)}<small>${s.co}/${s.dd}</small>` : '–', (s, dOut) => dOut && s.dd ? s.co / s.dd : -1],
+  ['Hoogste beurt', s => s.hi || '–', s => s.hi],
+  ['Hoogste finish', s => s.hico || '–', s => s.hico],
+  ['180', s => s.t180, s => s.t180],
+  ['140+', s => s.t140, s => s.t140],
+  ['100+', s => s.t100, s => s.t100],
+  ['Beste leg', s => s.bestLeg ? s.bestLeg + ' pijlen' : '–', s => s.bestLeg ? -s.bestLeg : -1e9],
+];
+function statsTable(list, dOut) {
+  const multi = list.length > 1;
+  const body = STAT_ROWS.map(([label, fmt, val]) => {
+    const vals = list.map(x => val(x.st, dOut));
+    const max = Math.max(...vals);
+    const uniq = vals.filter(v => v === max).length === 1;
+    const valid = label === 'Beste leg' ? max > -1e9 : max > 0;
+    return `<tr><td>${label}</td>${list.map((x, k) => `<td class="${multi && uniq && valid && vals[k] === max ? 'best' : ''}">${fmt(x.st, dOut)}</td>`).join('')}</tr>`;
+  }).join('');
+  return `<div class="tbl-wrap"><table class="stats"><thead><tr><th></th>${list.map(x => `<th>${esc(x.name)}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+const liveStatsList = () => m.players.map((p, i) => ({ name: p.name, st: playerStats(m, i) }));
+
+function renderEnd() {
+  const D = derive(m);
+  const w = m.players[D.winner];
+  return `<div class="screen">
+    <header class="topbar">
+      <button class="icon-btn" data-a="new" aria-label="Naar menu">${I.back}</button>
+      <div class="tb-title"><b>Wedstrijd voorbij</b></div>
+      <button class="icon-btn" data-a="undo" aria-label="Laatste beurt ongedaan maken">${I.undo}</button>
+    </header>
+    <div class="scroll">
+      <div class="win"><p>Winnaar</p><h1 class="win-name">${esc(w.name)}</h1><div class="win-score">${D.legs.join(' – ')}</div></div>
+      ${statsTable(liveStatsList(), m.doubleOut)}
+    </div>
+    <div class="actions"><button class="btn primary" data-a="rematch">Revanche</button><button class="btn" data-a="new">Nieuwe wedstrijd</button></div>
+  </div>`;
+}
+
+function lifetime() {
+  const map = new Map();
+  for (const h of history) h.players.forEach((p, i) => {
+    if (p.bot) return;
+    const k = p.name.trim().toLowerCase();
+    if (!map.has(k)) map.set(k, { name: p.name, played: 0, won: 0, st: { pts: 0, darts: 0, f9p: 0, f9d: 0, co: 0, dd: 0, hi: 0, hico: 0, t180: 0, t140: 0, t100: 0, bestLeg: 0 }, doubleGames: 0 });
+    const a = map.get(k), s = p.st;
+    a.played++; if (h.winner === i) a.won++;
+    for (const f of ['pts', 'darts', 'f9p', 'f9d', 't180', 't140', 't100']) a.st[f] += s[f];
+    if (h.doubleOut) { a.st.co += s.co; a.st.dd += s.dd; }
+    a.st.hi = Math.max(a.st.hi, s.hi); a.st.hico = Math.max(a.st.hico, s.hico);
+    if (h.start === 501 && s.bestLeg && (!a.st.bestLeg || s.bestLeg < a.st.bestLeg)) a.st.bestLeg = s.bestLeg;
+  });
+  return [...map.values()].sort((a, b) => b.played - a.played);
+}
+
+function renderHistory() {
+  let body = '';
+  if (!history.length) {
+    body = `<div class="empty">Nog geen wedstrijden gespeeld.<br>Uitgespeelde wedstrijden verschijnen hier vanzelf.</div>`;
+  } else if (ui.histTab === 'players') {
+    const L = lifetime();
+    body = L.length ? L.map(a => `<div class="pstat"><h3>${esc(a.name)}</h3><p>${a.played} ${a.played === 1 ? 'wedstrijd' : 'wedstrijden'}, ${a.won} gewonnen</p>
+      <div class="pgrid">
+        <div><b>${fmtAvg(a.st.pts, a.st.darts)}</b>gemiddelde</div>
+        <div><b>${fmtAvg(a.st.f9p, a.st.f9d)}</b>eerste 9</div>
+        <div><b>${fmtPct(a.st.co, a.st.dd)}</b>uitgooi %</div>
+        <div><b>${a.st.t180}</b>keer 180</div>
+        <div><b>${a.st.hico || '–'}</b>hoogste finish</div>
+        <div><b>${a.st.bestLeg || '–'}</b>beste leg (501)</div>
+      </div></div>`).join('') : `<div class="empty">Alleen bots gespeeld. Statistieken van spelers verschijnen hier zodra iemand een wedstrijd uitspeelt.</div>`;
+  } else {
+    body = history.map(h => {
+      const open = ui.open === h.id;
+      return `<div class="hitem"><button class="hhead" data-a="hist-open" data-id="${h.id}" aria-expanded="${open}">
+        <span class="hdate">${dateFmt.format(new Date(h.date))}, ${h.start} ${h.doubleOut ? '' : '(op alles) '}eerste tot ${h.legsToWin}</span>
+        ${h.players.map((p, i) => `<span class="hp ${h.winner === i ? 'w' : ''}"><span>${esc(p.name)}</span><span class="hl">${p.legs} ${p.legs === 1 ? 'leg' : 'legs'}, gem ${fmtAvg(p.st.pts, p.st.darts)}</span></span>`).join('')}
+      </button>${open ? `<div class="hbody">${statsTable(h.players.map(p => ({ name: p.name, st: p.st })), h.doubleOut)}</div>` : ''}</div>`;
+    }).join('') + `<button class="btn ghost clear" data-a="hist-clear">Geschiedenis wissen</button>`;
+  }
+  return `<div class="screen">
+    <header class="topbar">
+      <button class="icon-btn" data-a="go-home" aria-label="Terug">${I.back}</button>
+      <div class="tb-title"><b>Geschiedenis</b></div>
+    </header>
+    <div style="padding:0 16px 10px">${`<div class="seg" role="group">${[['matches', 'Wedstrijden'], ['players', 'Spelers']].map(([v, l]) => `<button data-a="hist-tab" data-v="${v}" class="${ui.histTab === v ? 'on' : ''}" aria-pressed="${ui.histTab === v}">${l}</button>`).join('')}</div>`}</div>
+    <div class="scroll">${body}</div>
+  </div>`;
+}
+
+function renderCamPad(info) {
+  const errMsg = { denied: 'Geen toegang tot de camera. Sta cameratoegang toe voor deze pagina in je browser, of kies een andere invoer.', unsupported: 'Deze browser geeft geen toegang tot de camera.', failed: 'De camera kon niet starten. Sluit andere apps die de camera gebruiken en probeer opnieuw.' }[cam.error];
+  let msg = '';
+  if (errMsg) msg = `<div class="cam-msg"><div>${errMsg}<div class="row-btns" style="justify-content:center;margin-top:12px"><button class="btn small" data-a="cam-retry">Opnieuw proberen</button><button class="btn small" data-a="use-darts">Per pijl invoeren</button></div></div></div>`;
+  else if (!cam.ready) msg = '<div class="cam-msg">Camera starten…</div>';
+  else if (!cam.cal || calMismatch()) msg = `<div class="cam-msg"><div>${cam.cal ? 'Je telefoon staat anders dan bij het instellen.' : 'Stel eerst de camera in.'}<div class="row-btns" style="justify-content:center;margin-top:12px"><button class="btn small primary" data-a="cam-cal">Camera instellen</button></div></div></div>`;
+  const slots = [0, 1, 2].map(i => {
+    const d = cam.staged[i];
+    if (d) return `<button class="slot full ${dartCls(d.label)}" data-a="cam-fix" data-i="${i}" aria-label="Pijl ${i + 1}: ${d.label}, tik om te verbeteren">${d.label}</button>`;
+    const canAdd = i === cam.staged.length && !info.done;
+    return `<button class="slot" data-a="cam-fix" data-i="${i}" ${canAdd ? '' : 'disabled'} aria-label="Pijl ${i + 1} zelf invoeren"></button>`;
+  }).join('');
+  let status = cam.status || 'Hou het beeld even stil…';
+  if (cam.state === 'wait') status = 'Haal de pijlen uit het bord';
+  else if (info.bust) status = 'Bust. Haal je pijlen uit het bord';
+  else if (info.co) status = 'Uitgegooid! Haal je pijlen uit het bord';
+  return `<div class="pad campad">
+    <div class="cam-slot" id="cam-slot">${msg}</div>
+    <div class="pad-display"><div class="slots">${slots}</div><span class="slot-sum">${info.bust ? 'Bust' : info.sum}</span></div>
+    <p class="cam-status" aria-live="polite">${esc(status)}</p>
+    <div class="cam-btns">
+      <button class="btn" data-a="cam-miss" ${info.done ? 'disabled' : ''}>Mis</button>
+      ${cam.state === 'wait' ? '<button class="btn" data-a="cam-clear">Bord is leeg</button>' : `<button class="btn primary" data-a="cam-commit" ${cam.staged.length ? '' : 'disabled'}>Beurt klaar</button>`}
+      <button class="icon-btn" data-a="cam-cal" aria-label="Camera instellen">${I.gear}</button>
+    </div>
+  </div>`;
+}
+
+function renderCamCal() {
+  let msg = '';
+  if (cam.error) msg = `<div class="cam-msg"><div>${cam.error === 'denied' ? 'Geen toegang tot de camera. Sta cameratoegang toe voor deze pagina in je browser.' : cam.error === 'unsupported' ? 'Deze browser geeft geen toegang tot de camera.' : 'De camera kon niet starten.'}<div class="row-btns" style="justify-content:center;margin-top:12px"><button class="btn small" data-a="cam-retry">Opnieuw proberen</button></div></div></div>`;
+  else if (!cam.ready) msg = '<div class="cam-msg">Camera starten…</div>';
+  return `<div class="screen camcal">
+    <header class="topbar">
+      <button class="icon-btn" data-a="cal-back" aria-label="Terug">${I.back}</button>
+      <div class="tb-title"><b>Camera instellen</b></div>
+    </header>
+    <div class="cal-stage"><div class="cam-slot" id="cam-slot">${msg}</div></div>
+    <div class="cal-help">
+      <p>Zet je telefoon stevig neer, schuin onder of naast het bord, zodat je de pijlen van opzij ziet en het hele bord in beeld is.</p>
+      <p>Sleep elk rood bolletje naar de buitenrand van de dubbelring, midden in het vak met hetzelfde getal. Het raster moet precies over je bord vallen.</p>
+    </div>
+    <div class="actions"><button class="btn" data-a="cal-reset" ${cam.ready ? '' : 'disabled'}>Opnieuw plaatsen</button><button class="btn primary" data-a="cal-save" ${cam.ready ? '' : 'disabled'}>Opslaan</button></div>
+  </div>`;
+}
+
+function renderLayer() {
+  if (ui.fix != null && ui.screen === 'game' && m) {
+    const mod = ui.mod, pre = mod === 2 ? 'D' : mod === 3 ? 'T' : '', i = ui.fix, has = i < cam.staged.length;
+    const nums = Array.from({ length: 20 }, (_, k) => `<button class="key n" data-a="fix-dart" data-n="${k + 1}">${pre}${k + 1}</button>`).join('');
+    return `<div class="overlay" data-a="fix-close" data-self="1"><div class="sheet" role="dialog" aria-modal="true">
+      <div class="sheet-h"><h2>${has ? `Pijl ${i + 1} verbeteren` : `Pijl ${i + 1} invoeren`}</h2><button class="icon-btn" data-a="fix-close" aria-label="Sluiten">${I.x}</button></div>
+      <div class="pad fixpad">
+        <div class="mods">${[[1, 'Enkel'], [2, 'Dubbel'], [3, 'Triple']].map(([v, l]) => `<button data-a="mod" data-v="${v}" class="${mod === v ? 'on' : ''}" aria-pressed="${mod === v}">${l}</button>`).join('')}</div>
+        <div class="dgrid m${mod}">${nums}
+          <button class="key" data-a="fix-dart" data-n="25" ${mod === 3 ? 'disabled' : ''}>${mod === 2 ? 'Bull' : '25'}</button>
+          <button class="key" data-a="fix-miss" style="grid-column:span 2">Mis</button>
+          <button class="key" data-a="fix-del" style="grid-column:span 2" ${has ? '' : 'disabled'}>Wissen</button>
+        </div>
+      </div>
+    </div></div>`;
+  }
+  if (ui.modal) {
+    const q = ui.modal;
+    if (q.type === 'confirm') return `<div class="overlay center" data-a="modal-close" data-self="1"><div class="dialog" role="dialog" aria-modal="true"><h2>${q.title}</h2><p>${q.text}</p><div class="row-btns"><button class="btn ghost" data-a="modal-close">${q.no || 'Annuleren'}</button><button class="btn danger" data-a="confirm-yes">${q.yes}</button></div></div></div>`;
+    if (q.type === 'turn') {
+      const name = esc(pname(q.p));
+      const title = q.kind === 'co' ? `Uitgegooid!` : q.kind === 'bust' ? 'Bust' : 'Pijlen op een dubbel';
+      let inner;
+      if (q.darts == null) {
+        inner = `<p class="q">Met hoeveel pijlen gooide ${name} ${q.st} uit?</p><div class="choice" style="--n:${q.dartOpts.length}">${q.dartOpts.map(k => `<button data-a="turn-darts" data-v="${k}">${k}</button>`).join('')}</div>`;
+      } else {
+        const o = ddOptions(q);
+        inner = `<p class="q">Hoeveel pijlen gooide ${name} op een dubbel?</p><div class="choice" style="--n:${o.length}">${o.map(k => `<button data-a="turn-dd" data-v="${k}">${k}</button>`).join('')}</div>`;
+      }
+      return `<div class="overlay center"><div class="dialog" role="dialog" aria-modal="true"><h2>${title}</h2>${q.kind === 'normal' ? '' : `<p>${q.kind === 'co' ? `${name} gooit ${q.st} uit.` : `Geen score voor ${name}.`}</p>`}${inner}<div class="row-btns"><button class="btn ghost" data-a="modal-close">Terug</button></div></div></div>`;
+    }
+  }
+  if (ui.sheet === 'stats' && m) {
+    return `<div class="overlay" data-a="sheet-close" data-self="1"><div class="sheet" role="dialog" aria-modal="true"><div class="sheet-h"><h2>Statistieken</h2><button class="icon-btn" data-a="sheet-close" aria-label="Sluiten">${I.x}</button></div>${statsTable(liveStatsList(), m.doubleOut)}</div></div>`;
+  }
+  if (ui.sheet === 'menu' && m) {
+    return `<div class="overlay" data-a="sheet-close" data-self="1"><div class="sheet" role="dialog" aria-modal="true"><div class="sheet-h"><h2>Opties</h2><button class="icon-btn" data-a="sheet-close" aria-label="Sluiten">${I.x}</button></div>
+      <div class="opt"><span class="opt-l">Score invoeren</span>${seg('mode', MODE_OPTS, settings.mode)}</div>
+      <div class="opt inline"><span class="opt-l">Scores omroepen</span><button class="switch ${settings.call ? 'on' : ''}" role="switch" aria-checked="${settings.call}" aria-label="Scores omroepen" data-a="toggle-call"></button></div>
+      <div class="opt"><span class="opt-l">Weergave</span>${seg('theme', [['auto', 'Automatisch'], ['light', 'Licht'], ['dark', 'Donker']], settings.theme)}</div>
+      <div class="opt"><button class="btn danger" style="width:100%" data-a="stop-match">Wedstrijd stoppen</button></div>
+    </div></div>`;
+  }
+  return '';
+}
+
+// ---------- actions ----------
+function confirmModal(title, text, yes, onYes, no) { ui.modal = { type: 'confirm', title, text, yes, onYes, no }; render(); }
+const A = {
+  set(d) {
+    let v = d.v;
+    if (d.k === 'start' || d.k === 'legs') v = parseInt(v, 10);
+    if (d.k === 'doubleOut') v = v === 'true';
+    if (d.k === 'mode' && m && ((m.pend.length && v !== 'darts') || (cam.staged.length && v !== 'camera'))) { toast('Maak eerst deze beurt af'); return; }
+    if (d.k === 'mode' && v === 'camera') { cam.staged = []; camResetFrames(); if (!cam.cal && m && ui.screen === 'game') { settings.mode = v; saveSettings(); A['cam-cal'](); return; } }
+    settings[d.k] = v; saveSettings(); render();
+  },
+  'toggle-call'() { settings.call = !settings.call; saveSettings(); if (settings.call) speak('Scores omroepen staat aan'); render(); },
+  'add-player'() { if (settings.players.length < 4) settings.players.push({ name: '', bot: null }); saveSettings(); render(); },
+  'add-bot'() { if (settings.players.length < 4) settings.players.push({ name: '', bot: 'b50' }); saveSettings(); render(); },
+  'remove-player'(d) { settings.players.splice(+d.i, 1); saveSettings(); render(); },
+  shuffle() { const a = settings.players; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } saveSettings(); render(); },
+  recent(d) {
+    const slot = settings.players.find(p => !p.bot && !(p.name || '').trim());
+    if (slot) slot.name = d.name; else if (settings.players.length < 4) settings.players.push({ name: d.name, bot: null });
+    saveSettings(); render();
+  },
+  start() {
+    if (m) confirmModal('Nieuwe wedstrijd starten?', 'De wedstrijd die nog bezig is wordt gestopt en niet bewaard.', 'Nieuwe starten', 'replace');
+    else startMatch();
+  },
+  resume() { ui.screen = 'game'; render(); keepAwake(true); },
+  discard() { confirmModal('Wedstrijd stoppen?', 'Deze wedstrijd wordt niet bewaard in je geschiedenis.', 'Stoppen', 'discard', 'Doorgaan'); },
+  history() { ui.screen = 'history'; render(); },
+  'go-home'() { ui.screen = 'home'; render(); },
+  home() { stopBot(); ui.screen = 'home'; ui.sheet = null; render(); keepAwake(false); },
+  undo() { undo(); },
+  sheet(d) { ui.sheet = d.v; render(); },
+  'sheet-close'(d, el, e) { if (d.self && e.target !== el) return; ui.sheet = null; render(); },
+  'modal-close'(d, el, e) { if (d.self && e.target !== el) return; ui.modal = null; render(); },
+  'confirm-yes'() {
+    const k = ui.modal && ui.modal.onYes; ui.modal = null;
+    if (k === 'replace') { stopBot(); startMatch(); return; }
+    if (k === 'discard' || k === 'stop') { stopBot(); m = null; saveMatch(); ui.sheet = null; ui.screen = 'home'; keepAwake(false); render(); return; }
+    if (k === 'clear') { history = []; saveHistory(); ui.open = null; render(); return; }
+    render();
+  },
+  'stop-match'() { ui.sheet = null; confirmModal('Wedstrijd stoppen?', 'Deze wedstrijd wordt niet bewaard in je geschiedenis.', 'Stoppen', 'stop', 'Doorgaan'); },
+  key(d) {
+    if (ui.input.length >= 3) return;
+    const nv = (ui.input + d.v).replace(/^0+(?=\d)/, '');
+    if (parseInt(nv, 10) > 180) { toast('Maximaal 180 per beurt'); return; }
+    ui.input = nv; render();
+  },
+  bksp() { ui.input = ui.input.slice(0, -1); render(); },
+  ok() { submitKeypad(); },
+  quick(d) { ui.input = ''; submitKeypad(parseInt(d.v, 10)); },
+  mod(d) { const v = +d.v; ui.mod = ui.mod === v ? 1 : v; render(); },
+  dart(d) {
+    const nn = +d.n; const mod = nn === 25 && ui.mod === 3 ? 1 : ui.mod;
+    const dart = DARTS.find(x => x.n === nn && x.m === mod);
+    if (!dart) return;
+    addDart(dart); ui.mod = 1; render();
+  },
+  miss() { addDart({ m: 0, n: 0, v: 0, label: 'Mis' }); ui.mod = 1; render(); },
+  'dart-back'() { if (m.pend.length) { m.pend.pop(); saveMatch(); render(); } },
+  'turn-darts'(d) { ui.modal.darts = +d.v; advanceTurnModal(); },
+  'turn-dd'(d) { ui.modal.dd = +d.v; advanceTurnModal(); },
+  rematch() {
+    const n = m.players.length;
+    startMatch({ players: m.players.map(p => ({ ...p })), start: m.start, legsToWin: m.legsToWin, doubleOut: m.doubleOut, first: (m.first + 1) % n });
+  },
+  new() { stopBot(); m = null; saveMatch(); ui.screen = 'home'; keepAwake(false); render(); },
+  'cam-cal'() {
+    if (ui.screen !== 'camcal') ui.calReturn = ui.screen;
+    ui.sheet = null; ui.screen = 'camcal';
+    cam.edit = cam.cal && !calMismatch() ? cam.cal.pts.map(p => [...p]) : (cam.ready ? defaultCal() : null);
+    render();
+  },
+  'cal-reset'() { cam.edit = defaultCal(); render(); },
+  'cal-save'() {
+    if (!cam.edit || !convexQuad(cam.edit)) { toast('Zet de vier punten rond het bord'); return; }
+    cam.cal = { pts: cam.edit.map(p => [...p]), aspect: camAspect() || (cam.cal && cam.cal.aspect) || 4 / 3 };
+    store.set('cal', cam.cal); cam.edit = null; cam.prior = null;
+    camUpdateH(); camResetFrames();
+    ui.screen = ui.calReturn === 'game' && m ? 'game' : 'home';
+    toast('Camera ingesteld'); render();
+  },
+  'cal-back'() { cam.edit = null; camUpdateH(); ui.screen = ui.calReturn === 'game' && m ? 'game' : 'home'; render(); },
+  'cam-retry'() { cam.error = null; render(); },
+  'use-darts'() { settings.mode = 'darts'; saveSettings(); render(); },
+  'cam-miss'() { if (!stagedInfo().done) { cam.staged.push({ label: 'Mis', v: 0, m: 0 }); render(); } },
+  'cam-commit'() { if (!cam.staged.length) return; commitCamTurn(); cam.state = 'wait'; cam.status = 'Haal de pijlen uit het bord'; render(); },
+  'cam-clear'() { cam.ref = cam.base = null; cam.state = 'throw'; cam.status = 'Hou het beeld even stil…'; render(); },
+  'cam-fix'(d) { ui.fix = +d.i; ui.mod = 1; render(); },
+  'fix-close'(d, el, e) { if (d.self && e.target !== el) return; ui.fix = null; render(); },
+  'fix-dart'(d) {
+    const nn = +d.n, mod = nn === 25 && ui.mod === 3 ? 1 : ui.mod;
+    const dart = DARTS.find(x => x.n === nn && x.m === mod); if (!dart) return;
+    const old = cam.staged[ui.fix] || {};
+    cam.staged[ui.fix] = { label: dart.label, v: dart.v, m: dart.m, px: old.px, py: old.py };
+    ui.fix = null; ui.mod = 1; render();
+  },
+  'fix-miss'() { const old = cam.staged[ui.fix] || {}; cam.staged[ui.fix] = { label: 'Mis', v: 0, m: 0, px: old.px, py: old.py }; ui.fix = null; render(); },
+  'fix-del'() { cam.staged.splice(ui.fix, 1); ui.fix = null; render(); },
+  'hist-tab'(d) { ui.histTab = d.v; render(); },
+  'hist-open'(d) { ui.open = ui.open === d.id ? null : d.id; render(); },
+  'hist-clear'() { confirmModal('Geschiedenis wissen?', 'Alle bewaarde wedstrijden en spelersstatistieken worden verwijderd.', 'Wissen', 'clear'); },
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]');
+  if (!el || el.disabled) return;
+  const fn = A[el.dataset.a];
+  if (fn) fn(el.dataset, el, e);
+});
+document.addEventListener('input', e => {
+  const i = e.target.dataset && e.target.dataset.nameI;
+  if (i != null) { settings.players[+i].name = e.target.value; saveSettings(); }
+});
+document.addEventListener('change', e => {
+  const i = e.target.dataset && e.target.dataset.levelI;
+  if (i != null) { settings.players[+i].bot = e.target.value; saveSettings(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.target.matches && e.target.matches('input,select')) { if (e.key === 'Enter') e.target.blur(); return; }
+  if (e.key === 'Escape') { if (ui.fix != null) { ui.fix = null; render(); } else if (ui.modal) { ui.modal = null; render(); } else if (ui.sheet) { ui.sheet = null; render(); } return; }
+  if (ui.modal && ui.modal.type === 'turn' && /^[0-3]$/.test(e.key)) {
+    const q = ui.modal, v = +e.key;
+    if (q.darts == null) { if (q.dartOpts.includes(v)) { q.darts = v; advanceTurnModal(); } }
+    else if (ddOptions(q).includes(v)) { q.dd = v; advanceTurnModal(); }
+    return;
+  }
+  if (ui.modal || ui.sheet || ui.hold || ui.screen !== 'game' || !m || derive(m).done || m.players[derive(m).cur].bot || settings.mode !== 'keypad') return;
+  if (/^\d$/.test(e.key)) { A.key({ v: e.key }); e.preventDefault(); }
+  else if (e.key === 'Backspace') { A.bksp(); e.preventDefault(); }
+  else if (e.key === 'Enter') { A.ok(); e.preventDefault(); }
+});
+
+// ================= Camera scoring =================
+const CAL_BOARD = [[0, 170], [170, 0], [0, -170], [-170, 0]]; // outer double edge at 20, 6, 3, 11
+const CAL_NUMS = [20, 6, 3, 11];
+const RINGS = [6.35, 15.9, 99, 107, 162, 170];
+
+function gaussSolve(A, b) {
+  const n = b.length, M = A.map((r, i) => [...r, b[i]]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-12) return null;
+    [M[c], M[p]] = [M[p], M[c]];
+    for (let r = 0; r < n; r++) { if (r === c) continue; const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
+  }
+  return M.map((r, i) => r[n] / r[i]);
+}
+function solveH(src, dst) {
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = src[i], [u, v] = dst[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+  }
+  const h = gaussSolve(A, b); return h ? [...h, 1] : null;
+}
+function applyH(H, x, y) { const w = H[6] * x + H[7] * y + H[8]; return [(H[0] * x + H[1] * y + H[2]) / w, (H[3] * x + H[4] * y + H[5]) / w]; }
+function convexQuad(p) {
+  let sign = 0;
+  for (let i = 0; i < 4; i++) {
+    const a = p[i], b = p[(i + 1) % 4], c = p[(i + 2) % 4];
+    const z = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+    if (Math.abs(z) < 1e-6) return false;
+    if (!sign) sign = Math.sign(z); else if (Math.sign(z) !== sign) return false;
+  }
+  return true;
+}
+
+const cam = {
+  video: null, stream: null, starting: false, error: null, ready: false,
+  view: null, vctx: null, proc: null, pctx: null, PW: 0, PH: 0,
+  Hi2b: null, Hb2i: null, maskIdx: null, boardPx: 0, maskSample: 0,
+  prev: null, ref: null, base: null, stable: 0, bigMotion: false,
+  state: 'throw', staged: [], prior: null, status: '', timer: null, raf: 0,
+  cal: store.get('cal', null), edit: null, drag: -1, fit: null, lastSeen: 0,
+};
+
+function camAspect() { return cam.video && cam.video.videoWidth ? cam.video.videoWidth / cam.video.videoHeight : 0; }
+function calPts() { return cam.edit || (cam.cal && cam.cal.pts) || null; }
+function calMismatch() { const a = camAspect(); return !!(cam.cal && a && Math.abs(cam.cal.aspect - a) > 0.05); }
+function defaultCal() {
+  const a = camAspect() || 4 / 3, r = 0.3;
+  const rx = a >= 1 ? r / a : r, ry = a >= 1 ? r : r * a;
+  return [[0.5, 0.5 - ry], [0.5 + rx, 0.5], [0.5, 0.5 + ry], [0.5 - rx, 0.5]];
+}
+function camUpdateH() {
+  const pts = calPts();
+  cam.Hi2b = cam.Hb2i = null; cam.maskIdx = null;
+  if (!pts || !convexQuad(pts)) return;
+  cam.Hi2b = solveH(pts, CAL_BOARD); cam.Hb2i = solveH(CAL_BOARD, pts);
+  camBuildMask();
+}
+function camBuildMask() {
+  if (!cam.Hi2b || !cam.PW) return;
+  const { PW, PH } = cam, idx = []; let board = 0;
+  for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) {
+    const [bx, by] = applyH(cam.Hi2b, (x + 0.5) / PW, (y + 0.5) / PH);
+    const r = Math.hypot(bx, by);
+    if (r < 225) { idx.push(y * PW + x); if (r <= 170) board++; }
+  }
+  cam.maskIdx = Int32Array.from(idx); cam.boardPx = board;
+  cam.maskSample = Math.ceil(idx.length / 3);
+}
+function camResetFrames() { cam.prev = cam.ref = cam.base = null; cam.stable = 0; cam.bigMotion = false; cam.state = 'throw'; }
+
+async function camEnsure() {
+  if (cam.stream || cam.starting) return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { cam.error = 'unsupported'; render(); return; }
+  cam.starting = true; cam.error = null;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+    if (!camShouldRun()) { stream.getTracks().forEach(t => t.stop()); cam.starting = false; return; }
+    cam.stream = stream;
+    if (!cam.video) {
+      cam.video = document.createElement('video');
+      cam.video.setAttribute('playsinline', ''); cam.video.muted = true; cam.video.autoplay = true;
+      document.getElementById('camhold').appendChild(cam.video);
+    }
+    cam.video.srcObject = stream;
+    await new Promise(res => { if (cam.video.readyState >= 1) res(); else cam.video.onloadedmetadata = () => res(); });
+    try { await cam.video.play(); } catch (e) {}
+    const vw = cam.video.videoWidth, vh = cam.video.videoHeight, s = 480 / Math.max(vw, vh);
+    cam.PW = Math.round(vw * s); cam.PH = Math.round(vh * s);
+    cam.proc = document.createElement('canvas'); cam.proc.width = cam.PW; cam.proc.height = cam.PH;
+    cam.pctx = cam.proc.getContext('2d', { willReadFrequently: true });
+    cam.ready = true; camUpdateH(); camResetFrames();
+    camLoop(); camDraw();
+  } catch (e) {
+    cam.error = e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'denied' : 'failed';
+  }
+  cam.starting = false; render();
+}
+function camStop() {
+  if (cam.stream) cam.stream.getTracks().forEach(t => t.stop());
+  cam.stream = null; cam.ready = false;
+  clearTimeout(cam.timer); cam.timer = null; cancelAnimationFrame(cam.raf); cam.raf = 0;
+  camResetFrames();
+}
+function camShouldRun() {
+  if (ui.screen === 'camcal') return true;
+  return ui.screen === 'game' && m && !derive(m).done && settings.mode === 'camera';
+}
+function camSync() {
+  if (camShouldRun()) {
+    if (!cam.view) camMakeView();
+    const slot = document.getElementById('cam-slot');
+    if (slot && cam.view.parentNode !== slot) slot.appendChild(cam.view);
+    if (!cam.error) camEnsure();
+  } else if (cam.stream) camStop();
+}
+function humanCamTurn() {
+  if (ui.screen !== 'game' || !m || settings.mode !== 'camera' || ui.modal || ui.sheet || ui.hold || ui.fix != null) return false;
+  const D = derive(m); return !D.done && !m.players[D.cur].bot;
+}
+
+// ---------- frame processing ----------
+function camGrab() {
+  const { PW, PH, pctx } = cam;
+  pctx.drawImage(cam.video, 0, 0, PW, PH);
+  return pctx.getImageData(0, 0, PW, PH).data; // RGBA
+}
+function motionCount(a, b) {
+  const idx = cam.maskIdx; let c = 0;
+  for (let k = 0; k < idx.length; k += 3) {
+    const j = idx[k] * 4;
+    const d = Math.max(Math.abs(a[j] - b[j]), Math.abs(a[j + 1] - b[j + 1]), Math.abs(a[j + 2] - b[j + 2]));
+    if (d > 30) c++;
+  }
+  return c;
+}
+function camLoop() {
+  clearTimeout(cam.timer);
+  cam.timer = setTimeout(camLoop, 110);
+  const trk = cam.stream && cam.stream.getVideoTracks()[0];
+  if (trk && trk.readyState === 'ended') { camStop(); render(); return; }
+  if (cam.ready && cam.video.paused) { try { cam.video.play(); } catch (e) {} }
+  if (!cam.ready || !cam.maskIdx || cam.video.readyState < 2) return;
+  if (!humanCamTurn()) { cam.prev = null; cam.stable = 0; return; }
+  const f = camGrab();
+  if (!cam.prev) { cam.prev = f; cam.stable = 0; return; }
+  const mv = motionCount(f, cam.prev);
+  cam.prev = f;
+  if (mv > cam.maskSample * 0.05) cam.bigMotion = true;
+  if (mv > Math.max(4, cam.maskSample * 0.0012)) { cam.stable = 0; return; }
+  cam.stable++;
+  if (cam.stable === 3) camAnalyze(f);
+}
+function changedArea(S, R) {
+  const idx = cam.maskIdx; let mr = 0, mg = 0, mb = 0, n = 0;
+  for (let k = 0; k < idx.length; k += 5) { const j = idx[k] * 4; mr += S[j] - R[j]; mg += S[j + 1] - R[j + 1]; mb += S[j + 2] - R[j + 2]; n++; }
+  mr /= n; mg /= n; mb /= n;
+  let c = 0;
+  for (let k = 0; k < idx.length; k += 2) {
+    const j = idx[k] * 4;
+    const d = Math.max(Math.abs(S[j] - R[j] - mr), Math.abs(S[j + 1] - R[j + 1] - mg), Math.abs(S[j + 2] - R[j + 2] - mb));
+    if (d > 30) c++;
+  }
+  return c * 2;
+}
+function setStatus(s) { if (cam.status !== s) { cam.status = s; render(); } }
+function camReadyStatus() {
+  const n = cam.staged.length;
+  return n === 0 ? 'Gooi maar' : `Klaar voor pijl ${n + 1}`;
+}
+function camAnalyze(S) {
+  if (!cam.ref) { cam.ref = cam.base = S; cam.bigMotion = false; cam.state = 'throw'; setStatus(camReadyStatus()); return; }
+  const clean = cam.boardPx * 0.004;
+  if (cam.state === 'wait') {
+    const dB = changedArea(S, cam.base);
+    if (dB < clean || (cam.bigMotion && dB < cam.boardPx * 0.15)) { cam.ref = cam.base = S; cam.state = 'throw'; setStatus(camReadyStatus()); }
+    cam.bigMotion = false; return;
+  }
+  const info = stagedInfo();
+  if (cam.staged.length) {
+    const dB = changedArea(S, cam.base);
+    if (dB < clean) { cam.bigMotion = false; commitCamTurn(); cam.ref = cam.base = S; cam.state = 'throw'; setStatus(camReadyStatus()); return; }
+  }
+  if (info.done) { cam.bigMotion = false; return; }
+  const res = findDarts(S, cam.ref, 3 - cam.staged.length);
+  cam.bigMotion = false;
+  if (res.obstructed) { setStatus('Er staat iets voor het bord'); return; }
+  if (res.darts.length) {
+    for (const t of res.darts) {
+      const [bx, by] = applyH(cam.Hi2b, t.x / cam.PW, t.y / cam.PH);
+      const d = scorePoint(bx, by);
+      cam.staged.push({ label: d.label, v: d.v, m: d.m, px: t.x / cam.PW, py: t.y / cam.PH, bx, by });
+      if (stagedInfo().done) break;
+    }
+    cam.ref = S; cam.lastSeen = Date.now();
+    try { navigator.vibrate && navigator.vibrate(25); } catch (e) {}
+    const i2 = stagedInfo();
+    speak(spokenDart(cam.staged[cam.staged.length - 1].label));
+    setStatus(i2.bust ? 'Bust. Haal je pijlen uit het bord' : i2.co ? 'Uitgegooid! Haal je pijlen uit het bord' : i2.done ? 'Haal je pijlen uit het bord' : camReadyStatus());
+    render();
+  } else if (res.noiseOnly) {
+    cam.ref = S;
+    setStatus(camReadyStatus());
+  }
+}
+function spokenDart(l) {
+  if (l === 'Mis') return 'mis';
+  if (l === 'Bull') return 'bull';
+  if (l[0] === 'T') return 'triple ' + l.slice(1);
+  if (l[0] === 'D') return 'dubbel ' + l.slice(1);
+  return l;
+}
+
+function findDarts(S, R, maxN) {
+  const { PW, PH, maskIdx: idx } = cam, N = PW * PH;
+  let mr = 0, mg = 0, mb = 0, n = 0;
+  for (let k = 0; k < idx.length; k += 5) { const j = idx[k] * 4; mr += S[j] - R[j]; mg += S[j + 1] - R[j + 1]; mb += S[j + 2] - R[j + 2]; n++; }
+  mr /= n; mg /= n; mb /= n;
+  const lvl = new Uint8Array(N); // 0 none, 1 weak, 2 strong
+  let area = 0;
+  for (let k = 0; k < idx.length; k++) {
+    const p = idx[k], j = p * 4;
+    const d = Math.max(Math.abs(S[j] - R[j] - mr), Math.abs(S[j + 1] - R[j + 1] - mg), Math.abs(S[j + 2] - R[j + 2] - mb));
+    if (d > 16) { lvl[p] = d > 32 ? 2 : 1; if (d > 32) area++; }
+  }
+  const minA = Math.max(10, cam.boardPx * 0.0012), maxA = cam.boardPx * 0.06;
+  if (area > cam.boardPx * 0.15) return { obstructed: true, darts: [] };
+  // connected components over weak pixels, keep those with strong pixels
+  const lab = new Int32Array(N), comps = [], stack = new Int32Array(N);
+  let L = 0;
+  for (let k = 0; k < idx.length; k++) {
+    const s = idx[k]; if (!lvl[s] || lab[s]) continue;
+    L++; let sp = 0; stack[sp++] = s; lab[s] = L;
+    const pix = []; let strong = 0, x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1;
+    while (sp) {
+      const p = stack[--sp]; pix.push(p); if (lvl[p] === 2) strong++;
+      const x = p % PW, y = (p / PW) | 0;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= PW || yy >= PH) continue;
+        const q = yy * PW + xx; if (lvl[q] && !lab[q]) { lab[q] = L; stack[sp++] = q; }
+      }
+    }
+    if (strong >= 3) comps.push({ pix, strong, x0, x1, y0, y1 });
+  }
+  // merge nearby components (shaft gaps between barrel and flight)
+  const gap = Math.max(4, Math.round(Math.max(PW, PH) / 90));
+  let merged = true;
+  while (merged) {
+    merged = false;
+    for (let i = 0; i < comps.length && !merged; i++) for (let j = i + 1; j < comps.length; j++) {
+      const a = comps[i], b = comps[j];
+      if (a.x0 - gap <= b.x1 && b.x0 - gap <= a.x1 && a.y0 - gap <= b.y1 && b.y0 - gap <= a.y1) {
+        a.pix = a.pix.concat(b.pix); a.strong += b.strong;
+        a.x0 = Math.min(a.x0, b.x0); a.x1 = Math.max(a.x1, b.x1); a.y0 = Math.min(a.y0, b.y0); a.y1 = Math.max(a.y1, b.y1);
+        comps.splice(j, 1); merged = true; break;
+      }
+    }
+  }
+  const cands = comps.filter(c => c.strong >= minA && c.strong <= maxA).sort((a, b) => b.strong - a.strong).slice(0, maxN);
+  return { darts: cands.map(c => dartTip(c.pix, PW)), noiseOnly: !cands.length && area < minA * 2 };
+}
+
+function dartTip(pix, PW) {
+  let mx = 0, my = 0; const n = pix.length;
+  for (const p of pix) { mx += p % PW; my += (p / PW) | 0; }
+  mx /= n; my /= n;
+  let cxx = 0, cyy = 0, cxy = 0;
+  for (const p of pix) { const dx = p % PW - mx, dy = ((p / PW) | 0) - my; cxx += dx * dx; cyy += dy * dy; cxy += dx * dy; }
+  const th = 0.5 * Math.atan2(2 * cxy, cxx - cyy), ux = Math.cos(th), uy = Math.sin(th);
+  let tmin = 1e9, tmax = -1e9;
+  const T = new Float32Array(n), Sv = new Float32Array(n);
+  pix.forEach((p, i) => { const dx = p % PW - mx, dy = ((p / PW) | 0) - my; T[i] = dx * ux + dy * uy; Sv[i] = -dx * uy + dy * ux; if (T[i] < tmin) tmin = T[i]; if (T[i] > tmax) tmax = T[i]; });
+  const Lg = tmax - tmin;
+  if (Lg < 4) return { x: mx, y: my };
+  const zone = Lg * 0.22;
+  let aMin = 1e9, aMax = -1e9, bMin = 1e9, bMax = -1e9;
+  for (let i = 0; i < n; i++) {
+    if (T[i] < tmin + zone) { if (Sv[i] < aMin) aMin = Sv[i]; if (Sv[i] > aMax) aMax = Sv[i]; }
+    if (T[i] > tmax - zone) { if (Sv[i] < bMin) bMin = Sv[i]; if (Sv[i] > bMax) bMax = Sv[i]; }
+  }
+  const wa = aMax - aMin + 1, wb = bMax - bMin + 1, ratio = wa / wb;
+  let tipAtMin;
+  const confident = ratio < 0.75 || ratio > 1.33;
+  if (confident) tipAtMin = ratio < 1;
+  else if (cam.prior) tipAtMin = (ux * cam.prior[0] + uy * cam.prior[1]) > 0;
+  else tipAtMin = ratio <= 1;
+  const fx = tipAtMin ? ux : -ux, fy = tipAtMin ? uy : -uy; // tip -> flight
+  if (confident) {
+    if (!cam.prior) cam.prior = [fx, fy];
+    else { const px = cam.prior[0] * 0.7 + fx * 0.3, py = cam.prior[1] * 0.7 + fy * 0.3, l = Math.hypot(px, py) || 1; cam.prior = [px / l, py / l]; }
+  }
+  const edge = tipAtMin ? tmin : tmax, band = Math.max(1, Lg * 0.03);
+  let sx = 0, sy = 0, c = 0;
+  for (let i = 0; i < n; i++) if (Math.abs(T[i] - edge) <= band) { sx += pix[i] % PW; sy += (pix[i] / PW) | 0; c++; }
+  return { x: sx / c + 0.5, y: sy / c + 0.5 };
+}
+
+// ---------- staged turn ----------
+function stagedInfo() {
+  const D = derive(m), st = D.rem[D.cur];
+  let r = st, bust = false, co = false, sum = 0;
+  for (const d of cam.staged) {
+    const a = r - d.v;
+    if (a < 0 || (m.doubleOut && a === 1) || (a === 0 && m.doubleOut && d.m !== 2)) { bust = true; break; }
+    r = a; sum += d.v; if (r === 0) { co = true; break; }
+  }
+  return { st, sum: bust ? 0 : sum, bust, co, done: bust || co || cam.staged.length >= 3 };
+}
+function commitCamTurn() {
+  if (!m) return;
+  const D = derive(m); if (D.done || m.players[D.cur].bot) return;
+  const n0 = m.turns.length;
+  m.pend = [];
+  for (const d of cam.staged) { if (m.turns.length > n0) break; addDart(d); }
+  let guard = 0;
+  while (m.turns.length === n0 && guard++ < 3) addDart({ m: 0, n: 0, v: 0, label: 'Mis' });
+  cam.staged = [];
+  render();
+}
+
+// ---------- drawing ----------
+function camMakeView() {
+  cam.view = document.createElement('canvas');
+  cam.view.className = 'cam-view';
+  cam.vctx = cam.view.getContext('2d');
+  const toVid = e => {
+    const r = cam.view.getBoundingClientRect(), f = cam.fit; if (!f) return null;
+    const dpr = cam.view.width / r.width;
+    return [((e.clientX - r.left) * dpr - f.ox) / f.w, ((e.clientY - r.top) * dpr - f.oy) / f.h];
+  };
+  cam.view.addEventListener('pointerdown', e => {
+    if (ui.screen !== 'camcal' || !cam.edit || !cam.fit) return;
+    const p = toVid(e); if (!p) return;
+    const r = cam.view.getBoundingClientRect(), dpr = cam.view.width / r.width;
+    let best = -1, bd = 1e9;
+    cam.edit.forEach((q, i) => { const d = Math.hypot((q[0] - p[0]) * cam.fit.w, (q[1] - p[1]) * cam.fit.h) / dpr; if (d < bd) { bd = d; best = i; } });
+    if (bd > 60) return;
+    cam.drag = best; cam.dragOff = [cam.edit[best][0] - p[0], cam.edit[best][1] - p[1]];
+    cam.view.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  cam.view.addEventListener('pointermove', e => {
+    if (cam.drag < 0) return;
+    const p = toVid(e); if (!p) return;
+    cam.edit[cam.drag] = [Math.min(1, Math.max(0, p[0] + cam.dragOff[0])), Math.min(1, Math.max(0, p[1] + cam.dragOff[1]))];
+    camUpdateH();
+  });
+  const end = () => { if (cam.drag >= 0) { cam.drag = -1; render(); } };
+  cam.view.addEventListener('pointerup', end); cam.view.addEventListener('pointercancel', end);
+}
+function camDraw() {
+  cancelAnimationFrame(cam.raf);
+  cam.raf = requestAnimationFrame(camDraw);
+  const cv = cam.view; if (!cv || !cv.isConnected || !cam.ready) return;
+  const r = cv.getBoundingClientRect(); if (!r.width || !r.height) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = Math.round(r.width * dpr), H = Math.round(r.height * dpr);
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const g = cam.vctx, vw = cam.video.videoWidth, vh = cam.video.videoHeight;
+  const s = Math.min(W / vw, H / vh), w = vw * s, h = vh * s, ox = (W - w) / 2, oy = (H - h) / 2;
+  cam.fit = { ox, oy, w, h };
+  if (ui.screen === 'camcal' && !cam.edit) cam.edit = cam.cal && !calMismatch() ? cam.cal.pts.map(p => [...p]) : defaultCal();
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  g.drawImage(cam.video, ox, oy, w, h);
+  const P = (u, v) => [ox + u * w, oy + v * h];
+  const Hb = ui.screen === 'camcal' ? (cam.edit && convexQuad(cam.edit) ? solveH(CAL_BOARD, cam.edit) : null) : cam.Hb2i;
+  if (Hb && !(ui.screen !== 'camcal' && calMismatch())) {
+    const B = (x, y) => { const [u, v] = applyH(Hb, x, y); return P(u, v); };
+    const wire = new Path2D();
+    for (const rad of RINGS) {
+      for (let k = 0; k <= 72; k++) { const a = k / 72 * Math.PI * 2, [x, y] = B(rad * Math.sin(a), rad * Math.cos(a)); k ? wire.lineTo(x, y) : wire.moveTo(x, y); }
+    }
+    for (let k = 0; k < 20; k++) { const a = (k * 18 + 9) * Math.PI / 180, [x0, y0] = B(15.9 * Math.sin(a), 15.9 * Math.cos(a)), [x1, y1] = B(170 * Math.sin(a), 170 * Math.cos(a)); wire.moveTo(x0, y0); wire.lineTo(x1, y1); }
+    const calib = ui.screen === 'camcal';
+    g.lineWidth = (calib ? 3 : 2.4) * dpr; g.strokeStyle = 'rgba(0,0,0,.45)'; g.stroke(wire);
+    g.lineWidth = (calib ? 1.4 : 1) * dpr; g.strokeStyle = calib ? 'rgba(255,214,90,.95)' : 'rgba(255,214,90,.6)'; g.stroke(wire);
+    g.font = `700 ${11 * dpr}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(255,240,200,.9)';
+    SEG_ORDER.forEach((num, k) => { const a = k * 18 * Math.PI / 180, [x, y] = B(192 * Math.sin(a), 192 * Math.cos(a)); g.fillText(num, x, y); });
+  }
+  if (ui.screen === 'camcal' && cam.edit) {
+    cam.edit.forEach((q, i) => {
+      const [x, y] = P(q[0], q[1]);
+      g.beginPath(); g.arc(x, y, 13 * dpr, 0, Math.PI * 2); g.fillStyle = i === cam.drag ? 'rgba(226,75,64,.95)' : 'rgba(226,75,64,.8)'; g.fill();
+      g.lineWidth = 2 * dpr; g.strokeStyle = '#fff'; g.stroke();
+      g.fillStyle = '#fff'; g.font = `800 ${12 * dpr}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(CAL_NUMS[i], x, y + 0.5);
+    });
+    if (cam.drag >= 0) {
+      const q = cam.edit[cam.drag], [hx] = P(q[0], q[1]);
+      const R = 62 * dpr, cx = hx < W / 2 ? W - R - 10 * dpr : R + 10 * dpr, cy = R + 10 * dpr, z = 3;
+      const sw = (2 * R / z) / s, sx = q[0] * vw - sw / 2, sy = q[1] * vh - sw / 2;
+      g.save(); g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.clip();
+      g.drawImage(cam.video, sx, sy, sw, sw, cx - R, cy - R, 2 * R, 2 * R);
+      g.restore();
+      g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.lineWidth = 3 * dpr; g.strokeStyle = '#fff'; g.stroke();
+      g.beginPath(); g.moveTo(cx - 12 * dpr, cy); g.lineTo(cx + 12 * dpr, cy); g.moveTo(cx, cy - 12 * dpr); g.lineTo(cx, cy + 12 * dpr); g.lineWidth = 2 * dpr; g.strokeStyle = '#e24b40'; g.stroke();
+    }
+  } else {
+    cam.staged.forEach((d, i) => {
+      const [x, y] = P(d.px, d.py);
+      g.beginPath(); g.arc(x, y, 6 * dpr, 0, Math.PI * 2); g.fillStyle = '#e24b40'; g.fill(); g.lineWidth = 2 * dpr; g.strokeStyle = '#fff'; g.stroke();
+      g.font = `800 ${13 * dpr}px system-ui,sans-serif`; g.textAlign = 'left'; g.textBaseline = 'middle';
+      g.lineWidth = 3 * dpr; g.strokeStyle = 'rgba(0,0,0,.7)'; g.strokeText(d.label, x + 9 * dpr, y); g.fillStyle = '#fff'; g.fillText(d.label, x + 9 * dpr, y);
+    });
+  }
+}
+render(); if (ui.screen === 'game') keepAwake(true);
+</script>
+</body>
+</html>
